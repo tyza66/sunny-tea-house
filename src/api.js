@@ -1,5 +1,6 @@
 import { resolveLanguage, ERROR_KEYS } from '../shared/languages.js';
 import { TAGS, demoReview } from '../shared/review-demo.js';
+import { generateWithBrowserKey, hasBrowserKey } from './browser-ai.js';
 
 const DEMO_STORE = { name: 'Sunny Tea House', city: 'San Jose' };
 // 静态主机（GitHub Pages 等）对 GET 缺失路径返回 404，对 POST 缺失路径常返回 405。
@@ -39,7 +40,12 @@ export async function getShopConfig() {
   }
 }
 
+// 当前是否为无服务端的静态托管：只有静态托管才提供“自带密钥”入口。
+export function isStaticHost() { return staticFallback; }
+
 export async function requestReview(input) {
+  // 静态托管且已启用自带密钥时，浏览器直连 DeepSeek 完成真实生成，不再用示例文案。
+  if (staticFallback && hasBrowserKey()) return generateWithBrowserKey(input, DEMO_STORE);
   if (staticFallback) return demoResult(input);
   let response;
   try {
