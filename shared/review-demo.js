@@ -5,6 +5,7 @@ export const TAGS = ['服务好', '出餐快', '环境干净', '饮品颜值高'
 
 // 每个感受在各语言下的自然说法。演示文案按“平台声音”分别准备，
 // 避免两个平台读起来是同一种腔调，也避免逐条罗列标签。
+// 小红书版本额外控制在 150 个 Unicode 字符内，与服务端提示词的限制一致。
 // 注意：键一律使用规范标签名，与展示语言无关。
 const VOICE = {
   'zh-CN': {
@@ -34,9 +35,9 @@ const VOICE = {
       '果肉超丰富': 'there was plenty of real fruit pulp', '茶香浓郁': 'the tea had a clean, rich aroma',
     },
     小红书: {
-      '服务好': 'the staff were so warm and attentive', '出餐快': 'my order came out super fast',
-      '环境干净': 'the place is clean and comfy', '饮品颜值高': 'the drink looks amazing, very photogenic',
-      '果肉超丰富': 'the fruit pulp is generous', '茶香浓郁': 'the tea aroma is rich and smooth',
+      '服务好': 'the staff are so warm', '出餐快': 'my order came out fast',
+      '环境干净': 'the place is clean and comfy', '饮品颜值高': 'the drink looks amazing',
+      '果肉超丰富': 'so much real fruit pulp', '茶香浓郁': 'the tea is rich and smooth',
     },
   },
   'fr-CA': {
@@ -46,9 +47,9 @@ const VOICE = {
       '果肉超丰富': 'il y avait beaucoup de vraie pulpe de fruits', '茶香浓郁': "le thé avait un arôme riche et naturel",
     },
     小红书: {
-      '服务好': 'le personnel est tellement attentionné', '出餐快': 'ma commande est arrivée super vite',
-      '环境干净': "l'endroit est propre et confortable", '饮品颜值高': 'la boisson est super jolie',
-      '果肉超丰富': 'il y a beaucoup de pulpe de fruits', '茶香浓郁': 'le thé est riche et parfumé',
+      '服务好': 'le personnel est attentionné', '出餐快': 'la commande est arrivée vite',
+      '环境干净': 'l’endroit est propre', '饮品颜值高': 'la boisson est jolie',
+      '果肉超丰富': 'beaucoup de pulpe de fruits', '茶香浓郁': 'le thé est bien parfumé',
     },
   },
   es: {
@@ -59,37 +60,84 @@ const VOICE = {
     },
     小红书: {
       '服务好': 'el personal es muy amable', '出餐快': 'mi pedido salió rapidísimo',
-      '环境干净': 'el local está limpio y cómodo', '饮品颜值高': 'la bebida se ve preciosa',
-      '果肉超丰富': 'lleva mucha pulpa de fruta', '茶香浓郁': 'el té es aromático y suave',
+      '环境干净': 'el local está limpio', '饮品颜值高': 'la bebida se ve preciosa',
+      '果肉超丰富': 'mucha pulpa de fruta', '茶香浓郁': 'el té es aromático y suave',
     },
   },
 };
 
-// 平台外壳：开头、连接词与结尾按平台与语言分别设定；name 与 city 占位符会被替换。
+// 平台外壳：开头与结尾按平台与语言分别设定；${name} 与 ${city} 是占位符。
 // gap 是开头与第一句之间的间隔：中文不需要，拉丁语系需要一个空格。
+// 开头 3 种、结尾 2 种，同一组选择重复生成时轮换出现，演示不会读起来像固定文案。
 const SHELL = {
   Google: {
-    'zh-CN': { head: '在${city}的${name}坐了一会。', gap: '', sep: '，', tail: '。整体是一次舒服的消费。' },
-    'zh-TW': { head: '在${city}的${name}坐了一會。', gap: '', sep: '，', tail: '。整體是一次舒服的消費。' },
-    en: { head: 'Stopped in at ${name} in ${city}.', gap: ' ', sep: ', and ', tail: '. A solid, low-key spot for a relaxed tea run.' },
-    'fr-CA': { head: 'Passage chez ${name} à ${city}.', gap: ' ', sep: ', et ', tail: '. Une bonne adresse pour un thé tranquille.' },
-    es: { head: 'Pasé por ${name} en ${city}.', gap: ' ', sep: ', y ', tail: '. Un buen sitio para un té tranquillo.' },
+    'zh-CN': {
+      gap: '', sep: '，',
+      head: ['在${city}的${name}坐了一会。', '周末路过${city}，在${name}歇了一会脚。', '今天在${city}的${name}喝了一杯。'],
+      tail: ['。整体是一次舒服的消费。', '。会想再来一次。'],
+    },
+    'zh-TW': {
+      gap: '', sep: '，',
+      head: ['在${city}的${name}坐了一會。', '週末路過${city}，在${name}歇了一會腳。', '今天在${city}的${name}喝了一杯。'],
+      tail: ['。整體是一次舒服的消費。', '。會想再來一次。'],
+    },
+    en: {
+      gap: ' ', sep: ', and ',
+      head: ['Stopped in at ${name} in ${city}.', 'Swing by ${name} in ${city} after work.', 'Tried ${name} in ${city} this weekend.'],
+      tail: ['. A solid, low-key spot for a relaxed tea run.', '. Easy to recommend for a quick tea break.'],
+    },
+    'fr-CA': {
+      gap: ' ', sep: ', et ',
+      head: ['Passage chez ${name} à ${city}.', 'Arrêt chez ${name} à ${city} en fin de journée.', 'Essayé ${name} à ${city} cette fin de semaine.'],
+      tail: ['. Une bonne adresse pour un thé tranquille.', '. À recommander pour une pause thé.'],
+    },
+    es: {
+      gap: ' ', sep: ', y ',
+      head: ['Pasé por ${name} en ${city}.', 'Me pasé por ${name} en ${city} después del trabajo.', 'Probé ${name} en ${city} este fin de semana.'],
+      tail: ['. Un buen sitio para un té tranquilo.', '. Recomendable para una pausa tranquila.'],
+    },
   },
   小红书: {
-    'zh-CN': { head: '🧋 ${name} 探店\n\n', gap: '', sep: '，', tail: '。✨\n\n嘴馋的时候来一杯，很舒服。' },
-    'zh-TW': { head: '🧋 ${name} 探店\n\n', gap: '', sep: '，', tail: '。✨\n\n嘴饞的時候來一杯，很舒服。' },
-    en: { head: '🧋 ${name} in ${city}\n\n', gap: '', sep: ', and ', tail: '. 💛\n\nWorth a stop if you are nearby ✨' },
-    'fr-CA': { head: '🧋 ${name} à ${city}\n\n', gap: '', sep: ' et ', tail: '. 💛\n\nÀ essayer ✨' },
-    es: { head: '🧋 ${name} en ${city}\n\n', gap: '', sep: ' y ', tail: '. 💛\n\nVale la pena ✨' },
+    'zh-CN': {
+      gap: '', sep: '，',
+      head: ['🧋 ${name} 探店\n\n', '🧋 ${name}｜这一杯有点东西\n\n', '🧋 ${city}探店｜${name}\n\n'],
+      tail: ['。✨\n\n嘴馋的时候来一杯，很舒服。', '。✨\n\n下次来${city}还会想来一杯。'],
+    },
+    'zh-TW': {
+      gap: '', sep: '，',
+      head: ['🧋 ${name} 探店\n\n', '🧋 ${name}｜這一杯有點東西\n\n', '🧋 ${city}探店｜${name}\n\n'],
+      tail: ['。✨\n\n嘴饞的時候來一杯，很舒服。', '。✨\n\n下次來${city}還會想來一杯。'],
+    },
+    en: {
+      gap: '', sep: ', and ',
+      head: ['🧋 ${name} · ${city}\n\n', '🧋 ${name} in ${city}\n\n', '🧋 ${city} tea run — ${name}\n\n'],
+      tail: ['. 💛\n\nWorth a stop nearby ✨', '. 💛\n\nWould come back next time ✨'],
+    },
+    'fr-CA': {
+      gap: '', sep: ' et ',
+      head: ['🧋 ${name} · ${city}\n\n', '🧋 ${name} à ${city}\n\n', '🧋 ${city} — ${name}\n\n'],
+      tail: ['. 💛\n\nÀ essayer si vous passez par là ✨', '. 💛\n\nJ’y reviendrai ✨'],
+    },
+    es: {
+      gap: '', sep: ', y ',
+      head: ['🧋 ${name} · ${city}\n\n', '🧋 ${name} en ${city}\n\n', '🧋 ${city} — ${name}\n\n'],
+      tail: ['. 💛\n\nVale la pena ✨', '. 💛\n\nVolvería la próxima vez ✨'],
+    },
   },
 };
+
+export const DEMO_VARIANTS = SHELL.Google['zh-CN'].head.length * SHELL.Google['zh-CN'].tail.length;
 
 const fill = (template, store) => template.replaceAll('${name}', store.name).replaceAll('${city}', store.city);
 
 // 拉丁语系句子首字母大写，中文两端都不需要。
 const upperFirst = (text, language) => language.startsWith('zh') ? text : text[0].toUpperCase() + text.slice(1);
 
-export function demoReview(input, store) {
+// 同一组选择连续生成时轮换说法；variant 由测试显式传入，保证断言稳定。
+let rotation = 0;
+const at = (list, index) => list[index % list.length];
+
+export function demoReview(input, store, variant = rotation++) {
   const language = resolveLanguage(input.language, input.platform);
   const context = `${language}/${input.platform}/${input.tags.join('+')}`;
   const shell = SHELL[input.platform]?.[language];
@@ -99,5 +147,5 @@ export function demoReview(input, store) {
   if (missing) throw new Error(`演示文案缺少语言片段: ${context}`);
   const phrases = input.tags.map(tag => voice[tag]);
   const body = [upperFirst(phrases[0], language), ...phrases.slice(1)].join(shell.sep);
-  return `${fill(shell.head, store)}${shell.gap}${body}${shell.tail}`;
+  return `${fill(at(shell.head, variant), store)}${shell.gap}${body}${fill(at(shell.tail, variant), store)}`;
 }
