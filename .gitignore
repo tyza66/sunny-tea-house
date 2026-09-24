@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+*.log
+test-results/
+playwright-report/
+
+public-dist/
+*.tar.gz
+out/
+.netlify/
+*.zip
+.openai/
+docs/*.png
