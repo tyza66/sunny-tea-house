@@ -11,4 +11,3 @@ out/
 .netlify/
 *.zip
 .openai/
-docs/*.png
