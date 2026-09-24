@@ -2,6 +2,10 @@ import { resolveLanguage, ERROR_KEYS } from '../shared/languages.js';
 import { TAGS, demoReview } from '../shared/review-demo.js';
 
 const DEMO_STORE = { name: 'Sunny Tea House', city: 'San Jose' };
+// 静态主机（GitHub Pages 等）对 GET 缺失路径返回 404，对 POST 缺失路径常返回 405。
+const NO_API_STATUS = new Set([404, 405]);
+// /api/config 读取失败说明当前是纯静态托管，生成直接用本地文案，不再重复探测。
+let staticFallback = false;
 const DEMO_URLS = {
   Google: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${DEMO_STORE.name} ${DEMO_STORE.city}`)}`,
   小红书: 'https://www.xiaohongshu.com/',
@@ -26,13 +30,17 @@ export async function getShopConfig() {
   try {
     const response = await fetch('/api/config', { signal: AbortSignal.timeout(10000) });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    const config = await response.json();
+    staticFallback = false;
+    return config;
   } catch {
+    staticFallback = true;
     return demoConfig();
   }
 }
 
 export async function requestReview(input) {
+  if (staticFallback) return demoResult(input);
   let response;
   try {
     response = await fetch('/api/reviews', {
@@ -44,8 +52,8 @@ export async function requestReview(input) {
     if (response === undefined && error instanceof TypeError) return demoResult(input);
     throw error;
   }
-  // 静态托管通常对 /api/reviews 返回 404，此时切换到本地演示。
-  if (response.status === 404) return demoResult(input);
+  // 静态托管按请求方法不同返回 404 或 405，两种都说明当前没有接口。
+  if (NO_API_STATUS.has(response.status)) return demoResult(input);
   // Netlify 边缘限流或网关错误可能返回纯文本，不能直接假设为 JSON。
   const data = await response.json().catch(() => ({}));
   if (response.status === 429) throw new Error('rateError');
