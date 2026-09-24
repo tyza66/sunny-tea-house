@@ -102,6 +102,28 @@ test('静态托管：密钥被拒绝时提示并重新弹出填写面板', async
   await expect(page.getByRole('textbox', { name: '评价内容' })).toHaveValue(AI_DRAFT);
 });
 
+test('静态托管：自带密钥面板支持键盘打开、Esc 关闭并归还焦点', async ({ page }) => {
+  await useStaticHost(page);
+  await page.goto('/');
+  const trigger = page.getByRole('button', { name: '使用我自己的 AI 密钥' });
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await trigger.click();
+  // 打开后焦点直接落在密钥输入框，键盘用户不必再按一次 Tab。
+  await expect(page.getByRole('textbox', { name: /DeepSeek 密钥/ })).toBeFocused();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  // Esc 关闭面板，并把焦点还给触发器，键盘用户不会丢失位置。
+  await page.keyboard.press('Escape');
+  await expect(page.getByText('自带密钥的真实生成')).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  // 取消按钮同样归还焦点。
+  await trigger.click();
+  await expect(page.getByRole('textbox', { name: /DeepSeek 密钥/ })).toBeFocused();
+  await page.getByRole('button', { name: '取消' }).click();
+  await expect(page.getByText('自带密钥的真实生成')).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
 test('手机：自带密钥面板不产生横向溢出', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await useStaticHost(page);

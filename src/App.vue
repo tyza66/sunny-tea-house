@@ -24,6 +24,9 @@ const config = ref(null);
 // 静态托管（GitHub Pages 等）没有服务端：提供评审者自带密钥入口，直连 DeepSeek 真实生成。
 const staticHost = ref(false);
 const byokOpen = ref(false);
+const byokTrigger = ref(null);
+// v-model 只存密钥字符串；输入框 DOM 用单独的 ref，避免和 v-model 撞名。
+const byokInputEl = ref(null);
 const byokKeyInput = ref('');
 const byokActive = ref(false);
 const byokError = ref('');
@@ -79,14 +82,23 @@ function enableByok() {
   byokActive.value = true;
   byokCount.value = sessionUsage();
   byokKeyInput.value = '';
-  byokOpen.value = false;
+  closeByok(true);
 }
+// 关闭面板并把焦点还给触发器；生成中触发器被禁用，此时不抢焦点，避免焦点掉到 body 上。
+function closeByok(returnFocus = false) {
+  if (!byokOpen.value) return;
+  byokOpen.value = false;
+  if (returnFocus) nextTick(() => { if (!byokTrigger.value?.disabled) byokTrigger.value?.focus(); });
+}
+// 打开面板时把焦点直接送进密钥输入框，键盘用户一进来就能粘贴密钥。
+watch(byokOpen, open => { if (open) nextTick(() => byokInputEl.value?.focus()); });
 function removeByok() {
   clearBrowserKey();
   byokActive.value = false;
   byokCount.value = 0;
   byokError.value = '';
   byokOpen.value = true;
+  nextTick(() => byokInputEl.value?.focus());
 }
 onMounted(() => {
   document.addEventListener('pointerdown', onDocumentPointerDown);
@@ -250,11 +262,11 @@ async function copyAndRedirect() {
           <p class="generation-note">{{ t(config.demo ? (byokActive ? 'byokActiveNote' : 'demoNote') : 'aiNote') }}</p>
           <p v-if="config.notificationEnabled" class="generation-note">{{ t('notifyNote') }}</p>
           <div v-if="byokAvailable" class="byok">
-            <button class="byok-trigger" type="button" :aria-expanded="byokOpen" aria-controls="byok-panel" :disabled="isLoading" @click="byokOpen = !byokOpen">
+            <button ref="byokTrigger" class="byok-trigger" type="button" :aria-expanded="byokOpen" aria-controls="byok-panel" :disabled="isLoading" @click="byokOpen = !byokOpen">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15.5" r="3.8"/><path d="M10.8 12.7 19 4.5"/><path d="M16.4 7.1l2.6 2.6"/><path d="M13.9 4.5 15.4 6"/></svg>
               <span>{{ t(byokActive ? 'byokManage' : 'byokTrigger') }}</span>
             </button>
-            <div v-if="byokOpen" id="byok-panel" class="byok-panel" role="region" :aria-label="t('byokPanelAria')">
+            <div v-if="byokOpen" id="byok-panel" class="byok-panel" role="region" :aria-label="t('byokPanelAria')" @keydown.esc.prevent="closeByok(true)">
               <strong class="byok-heading">{{ t('byokTitle') }}</strong>
               <p class="byok-intro">{{ t('byokIntro') }}</p>
               <ul class="byok-points">
@@ -266,13 +278,13 @@ async function copyAndRedirect() {
               </ul>
               <label class="byok-field" :class="{ invalid: byokError }">
                 <span>{{ t('byokKeyLabel') }}</span>
-                <input v-model="byokKeyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" :placeholder="t('byokKeyPlaceholder')" @keydown.enter.prevent="enableByok" />
+                <input ref="byokInputEl" v-model="byokKeyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" :placeholder="t('byokKeyPlaceholder')" @keydown.enter.prevent="enableByok" />
               </label>
               <p v-if="byokError" class="byok-error" role="alert">{{ t(byokError) }}</p>
               <div class="byok-actions">
                 <button class="byok-enable" type="button" :disabled="!byokKeyInput" @click="enableByok">{{ t('byokEnable') }}</button>
                 <button v-if="byokActive" class="byok-remove" type="button" @click="removeByok">{{ t('byokRemove') }}</button>
-                <button v-else class="byok-cancel" type="button" @click="byokOpen = false">{{ t('byokCancel') }}</button>
+                <button v-else class="byok-cancel" type="button" @click="closeByok(true)">{{ t('byokCancel') }}</button>
               </div>
             </div>
             <p v-else-if="byokActive" class="byok-active">
