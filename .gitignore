@@ -11,3 +11,7 @@ out/
 .netlify/
 *.zip
 .openai/
+
+# 本地临时验证目录（截图脚本、PDF 渲染中转件）
+tmp/
+tmpverify/

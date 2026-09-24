@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { settleAnimations } from './settle.js';
 // 主流程固定中文环境；其他语言由 language.spec.js 单独覆盖。
 test.use({ locale: 'zh-CN' });
 
@@ -10,6 +11,7 @@ test('桌面：标签限制、生成、编辑、复制与平台切换', async ({
   const generate = page.getByRole('button', { name: '生成我的评价' });
   await expect(generate).toBeDisabled();
   await expect(page.getByText('你的这一杯，值得被记录')).toBeVisible();
+  await settleAnimations(page);
   await page.screenshot({ path: 'docs/桌面预览.png', fullPage: true });
   await page.getByRole('button', { name: '服务好' }).click();
   await page.getByRole('button', { name: '出餐快' }).click();
@@ -27,6 +29,7 @@ test('桌面：标签限制、生成、编辑、复制与平台切换', async ({
   await page.getByRole('button', { name: '重新生成评价' }).click();
   await expect(page.getByRole('textbox', { name: '评价内容' })).toHaveValue(/服务好贴心/);
   await expect(page.getByRole('textbox', { name: '评价内容' })).not.toHaveValue(/friendly/);
+  await settleAnimations(page);
   await page.screenshot({ path: 'docs/生成结果预览.png', fullPage: true });
 });
 
@@ -74,6 +77,7 @@ test('手机：无横向溢出，小红书编辑字数限制', async ({ page }) 
   await page.goto('/');
   await expect(page.getByText('你的这一杯，值得被记录')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await settleAnimations(page);
   await page.screenshot({ path: 'docs/手机预览.png', fullPage: true });
   await page.getByRole('button', { name: '茶香浓郁' }).click();
   await page.getByRole('radio', { name: /小红书/ }).check();

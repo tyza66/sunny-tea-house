@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { settleAnimations } from './settle.js';
 
 const UI_LABELS = {
   'zh-CN': '简体中文',
@@ -77,6 +78,7 @@ for (const item of cases) {
     await page.locator('.generate').click();
     expect((await request2).postDataJSON().language).toBe(item.code);
     if (item.code === 'fr-CA') {
+      await settleAnimations(page);
       await page.screenshot({ path: 'docs/法语手机预览.png', fullPage: true });
       await page.setViewportSize({ width: 1440, height: 1000 });
       await page.screenshot({ path: 'docs/法语桌面预览.png', fullPage: true });
