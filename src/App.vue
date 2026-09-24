@@ -164,7 +164,7 @@ async function copyAndRedirect() {
 <template>
   <div class="site-shell">
     <header class="site-header">
-      <a class="brand" href="/" :aria-label="t('home')">
+      <a class="brand" href="./" :aria-label="t('home')">
         <img src="/sun.svg" width="44" height="44" alt="" />
         <span>{{ config?.store.name || 'Sunny Tea House' }}<small>{{ t('tagline') }}</small></span>
       </a>
