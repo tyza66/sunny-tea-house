@@ -2,7 +2,8 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { LANGUAGES, isLanguage, resolveLanguage, ERROR_KEYS } from '../shared/languages.js';
 import { useI18n, readPreference, savePreference } from './i18n.js';
-import { getShopConfig, requestReview } from './api.js';
+import { getShopConfig, requestReview, isStaticHost } from './api.js';
+import { setBrowserKey, clearBrowserKey, sessionUsage, BROWSER_ERROR_KEYS } from './browser-ai.js';
 
 const { locale, t } = useI18n();
 
@@ -20,6 +21,14 @@ const reviewLanguage = ref(isLanguage(savedOutput) ? savedOutput : 'auto');
 watch(reviewLanguage, value => { savePreference('sunny.reviewLanguage', value); confirmed.value = false; notice.value = ''; });
 
 const config = ref(null);
+// 静态托管（GitHub Pages 等）没有服务端：提供评审者自带密钥入口，直连 DeepSeek 真实生成。
+const staticHost = ref(false);
+const byokOpen = ref(false);
+const byokKeyInput = ref('');
+const byokActive = ref(false);
+const byokError = ref('');
+const byokCount = ref(0);
+const byokAvailable = computed(() => !!config.value?.demo && staticHost.value);
 const selectedTags = ref([]);
 const selectedPlatform = ref('Google');
 const generatedContent = ref('');
@@ -59,7 +68,25 @@ async function loadConfig() {
   error.value = '';
   try {
     config.value = await getShopConfig();
+    staticHost.value = isStaticHost();
   } catch { error.value = 'loadError'; }
+}
+
+// 自带密钥：仅写入页面内存；格式不符时原位提示，不发起任何请求。
+function enableByok() {
+  byokError.value = '';
+  if (!setBrowserKey(byokKeyInput.value)) { byokError.value = 'byokFormatError'; return; }
+  byokActive.value = true;
+  byokCount.value = sessionUsage();
+  byokKeyInput.value = '';
+  byokOpen.value = false;
+}
+function removeByok() {
+  clearBrowserKey();
+  byokActive.value = false;
+  byokCount.value = 0;
+  byokError.value = '';
+  byokOpen.value = true;
 }
 onMounted(() => {
   document.addEventListener('pointerdown', onDocumentPointerDown);
@@ -126,9 +153,12 @@ async function generateReview() {
     const data = await requestReview(request);
     // 仅在成功后替换，失败时保留顾客已经编辑的内容。
     generatedContent.value = data.content;
-    generatedFor.value = { signature: requestSignature, platform: request.platform, language: data.language || request.language };
+    generatedFor.value = { signature: requestSignature, platform: request.platform, language: data.language || request.language, ai: !data.demo };
+    byokCount.value = sessionUsage();
     notice.value = 'ready';
   } catch (err) {
+    // 自带密钥被明确拒绝时移除密钥并重新弹出面板，让评审者当场换一把密钥重试。
+    if (err?.clearKey) { clearBrowserKey(); byokActive.value = false; byokOpen.value = true; }
     error.value = err.name === 'TimeoutError' ? 'timeout' : err instanceof TypeError ? 'networkError' : Object.values(ERROR_KEYS).includes(err.message) ? err.message : 'serverError';
   } finally { isLoading.value = false; }
 }
@@ -216,8 +246,39 @@ async function copyAndRedirect() {
             <div class="platforms"><label v-for="platform in platforms" :key="platform.name" :class="['platform', { active: selectedPlatform === platform.name }]"><input v-model="selectedPlatform" type="radio" name="platform" :value="platform.name" @change="confirmed = false; notice = ''" /><span :class="['platform-mark', platform.className]">{{ platform.mark }}</span><strong>{{ platformName(platform.name) }}</strong><small>{{ t(platform.detail) }}</small><span class="radio-dot" aria-hidden="true"></span></label></div>
           </fieldset>
           <button class="primary generate" :disabled="!selectedTags.length || isLoading" @click="generateReview"><span :class="{ spinner: isLoading }" aria-hidden="true">{{ isLoading ? '' : '✧' }}</span>{{ t(isLoading ? 'generating' : generatedContent ? 'regenerate' : 'generate') }}<span v-if="!isLoading" aria-hidden="true">↗</span></button>
-          <p class="generation-note">{{ t(config.demo ? 'demoNote' : 'aiNote') }}</p>
+          <p class="generation-note">{{ t(config.demo ? (byokActive ? 'byokActiveNote' : 'demoNote') : 'aiNote') }}</p>
           <p v-if="config.notificationEnabled" class="generation-note">{{ t('notifyNote') }}</p>
+          <div v-if="byokAvailable" class="byok">
+            <button class="byok-trigger" type="button" :aria-expanded="byokOpen" aria-controls="byok-panel" :disabled="isLoading" @click="byokOpen = !byokOpen">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15.5" r="3.8"/><path d="M10.8 12.7 19 4.5"/><path d="M16.4 7.1l2.6 2.6"/><path d="M13.9 4.5 15.4 6"/></svg>
+              <span>{{ t(byokActive ? 'byokManage' : 'byokTrigger') }}</span>
+            </button>
+            <div v-if="byokOpen" id="byok-panel" class="byok-panel" role="region" :aria-label="t('byokPanelAria')">
+              <strong class="byok-heading">{{ t('byokTitle') }}</strong>
+              <p class="byok-intro">{{ t('byokIntro') }}</p>
+              <ul class="byok-points">
+                <li>{{ t('byokMemory') }}</li>
+                <li>{{ t('byokDirect') }}</li>
+                <li>{{ t('byokCost') }}</li>
+                <li>{{ t('byokShared') }}</li>
+                <li>{{ t('byokNotifyLimit') }}</li>
+              </ul>
+              <label class="byok-field" :class="{ invalid: byokError }">
+                <span>{{ t('byokKeyLabel') }}</span>
+                <input v-model="byokKeyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" :placeholder="t('byokKeyPlaceholder')" @keydown.enter.prevent="enableByok" />
+              </label>
+              <p v-if="byokError" class="byok-error" role="alert">{{ t(byokError) }}</p>
+              <div class="byok-actions">
+                <button class="byok-enable" type="button" :disabled="!byokKeyInput" @click="enableByok">{{ t('byokEnable') }}</button>
+                <button v-if="byokActive" class="byok-remove" type="button" @click="removeByok">{{ t('byokRemove') }}</button>
+                <button v-else class="byok-cancel" type="button" @click="byokOpen = false">{{ t('byokCancel') }}</button>
+              </div>
+            </div>
+            <p v-else-if="byokActive" class="byok-active">
+              <span class="byok-dot" aria-hidden="true"></span>
+              <span class="byok-active-text">{{ t('byokActiveNote') }}<b class="byok-count">{{ t('byokSessionCount') }} {{ byokCount }}</b></span>
+            </p>
+          </div>
           <p v-if="error" class="error-message" role="alert">{{ t(error) }}</p>
         </section>
 
@@ -236,7 +297,7 @@ async function copyAndRedirect() {
             <p class="field-hint">{{ t('editHint') }}</p>
             <label class="sr-only" for="review">{{ t('content') }}</label>
             <textarea id="review" ref="editor" v-model="generatedContent" :disabled="isLoading" :placeholder="t('placeholder')" :lang="generatedFor?.language" @input="confirmed = false; notice = ''"></textarea>
-            <div class="editor-meta"><span>{{ languageName(generatedFor?.language) }} · {{ t(config.demo ? 'demoDraft' : 'aiDraft') }}</span><span :class="{ 'over-limit': tooLong }">{{ characterCount }}{{ generatedFor?.platform === '小红书' ? ' / 150' : '' }} {{ t('characters') }}</span></div>
+            <div class="editor-meta"><span>{{ languageName(generatedFor?.language) }} · {{ t(generatedFor?.ai ? 'aiDraft' : 'demoDraft') }}</span><span :class="{ 'over-limit': tooLong }">{{ characterCount }}{{ generatedFor?.platform === '小红书' ? ' / 150' : '' }} {{ t('characters') }}</span></div>
             <p v-if="stale" class="warning" role="status">{{ t('stale') }}</p>
             <p v-if="tooLong" class="warning" role="status">{{ t('tooLong') }}</p>
             <label class="confirm"><input v-model="confirmed" type="checkbox" :disabled="isLoading || !!stale" />{{ t('confirm') }}</label>
