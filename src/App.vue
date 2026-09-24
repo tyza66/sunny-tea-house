@@ -12,7 +12,7 @@ const theme = ref(readPreference(THEME_KEY, '') || 'light');
 function applyTheme() {
   document.documentElement.dataset.theme = theme.value;
   document.documentElement.style.colorScheme = theme.value;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.value === 'dark' ? '#0e1211' : '#eef0ed');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.value === 'dark' ? '#191512' : '#f5f0e6');
 }
 watch(theme, value => { savePreference(THEME_KEY, value); applyTheme(); }, { immediate: true });
 function toggleTheme() { theme.value = theme.value === 'dark' ? 'light' : 'dark'; }
@@ -159,7 +159,8 @@ async function generateReview() {
   } catch (err) {
     // 自带密钥被明确拒绝时移除密钥并重新弹出面板，让评审者当场换一把密钥重试。
     if (err?.clearKey) { clearBrowserKey(); byokActive.value = false; byokOpen.value = true; }
-    error.value = err.name === 'TimeoutError' ? 'timeout' : err instanceof TypeError ? 'networkError' : Object.values(ERROR_KEYS).includes(err.message) ? err.message : 'serverError';
+    error.value = err.name === 'TimeoutError' ? 'timeout' : err instanceof TypeError ? 'networkError'
+      : BROWSER_ERROR_KEYS.has(err.message) || Object.values(ERROR_KEYS).includes(err.message) ? err.message : 'serverError';
   } finally { isLoading.value = false; }
 }
 
@@ -228,7 +229,7 @@ async function copyAndRedirect() {
     <main>
       <section class="intro">
         <div><p class="eyebrow">YOUR TEA, YOUR WORDS</p><h1>{{ t('hero1') }}<br class="mobile-break" /> {{ t('hero2') }}<span>{{ locale.startsWith('zh') ? '。' : '.' }}</span></h1><p class="intro-copy">{{ t('intro') }}</p></div>
-        <div class="tea-stamp" aria-hidden="true"><span>FRESHLY</span><b>茶</b><span>BREWED</span></div>
+        <div class="tea-stamp" aria-hidden="true"><span>现泡</span><b>茶</b><span>手作</span></div>
       </section>
 
       <div v-if="!config" class="connection-message" role="status"><p>{{ t(error || 'preparing') }}</p><button v-if="error" class="secondary" @click="loadConfig">{{ t('reconnect') }}</button></div>
