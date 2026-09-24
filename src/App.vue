@@ -11,7 +11,7 @@ const theme = ref(readPreference(THEME_KEY, '') || 'light');
 function applyTheme() {
   document.documentElement.dataset.theme = theme.value;
   document.documentElement.style.colorScheme = theme.value;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.value === 'dark' ? '#14180f' : '#faf9f6');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.value === 'dark' ? '#121211' : '#f4f3ef');
 }
 watch(theme, value => { savePreference(THEME_KEY, value); applyTheme(); }, { immediate: true });
 function toggleTheme() { theme.value = theme.value === 'dark' ? 'light' : 'dark'; }
