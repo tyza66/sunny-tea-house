@@ -9,7 +9,7 @@
 :root{
   /* 宣纸与暖墨 */
   --bg:#f5f0e6; --surface:#fbf8f1; --ink:#241f19; --ink-2:#4b443a;
-  --muted:#877c6c; --line:#e4ddcc; --line-strong:#cec3ac;
+  --muted:#726858; --line:#e4ddcc; --line-strong:#cec3ac;
   /* 唯一的信号色：印章朱砂 */
   --accent:#a83c2a; --accent-ink:#84301f; --accent-soft:#f2e3da; --on-accent:#fdfaf4;
   /* 版式 */
@@ -106,7 +106,8 @@ h1>span{color:var(--accent)}
 .tea-stamp{width:92px;flex-shrink:0;border-radius:var(--r);padding:14px 0 13px;margin-top:4px;transform:rotate(-1.6deg);
   display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--on-accent);background:var(--accent);
   box-shadow:0 1px 2px #241f191f,0 14px 24px -20px #241f1966;animation:seal-in .42s .1s ease-out both}
-.tea-stamp span{font:400 8px/1 var(--font-display);letter-spacing:.34em;color:#fdfaf4b8;text-indent:.34em}
+/* 印章里的阴刻小字：72% 透明度在朱砂底上只有 3.9:1，提到 88% 保住质感同时过 AA */
+.tea-stamp span{font:400 8px/1 var(--font-display);letter-spacing:.34em;color:#fdfaf4e0;text-indent:.34em}
 .tea-stamp b{font:400 38px/1.1 "STKaiti","Kaiti SC","KaiTi","Songti SC",serif;margin:9px 0 4px;color:var(--on-accent)}
 .tea-stamp b::after{content:"";display:block;width:16px;height:2px;background:#fdfaf4a6;margin:10px auto 0}
 
@@ -149,6 +150,8 @@ legend{padding:0;font-family:var(--font-display);font-size:19px;font-weight:500;
 .platform-mark.red{font-size:10px;background:var(--accent);color:var(--on-accent);align-self:flex-start;border-radius:var(--r);padding:5px 7px;letter-spacing:.5px;font-family:var(--font-body);font-weight:600}
 .platform strong{font-size:13px;font-weight:600}
 .platform small{color:var(--muted);font-size:10px;margin-top:6px;letter-spacing:.3px}
+/* 选中态底色换成了 accent-soft，副标题沿用 muted 会掉到 4.37:1，这里抬到 ink-2 */
+.platform.active small{color:var(--ink-2)}
 .radio-dot{position:absolute;right:13px;top:16px;width:13px;height:13px;border:1px solid var(--line-strong);border-radius:50%}
 .platform.active .radio-dot{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 2px var(--surface)}
 
@@ -192,7 +195,7 @@ legend{padding:0;font-family:var(--font-display);font-size:19px;font-weight:500;
   border-radius:var(--r);background:var(--accent-soft);text-align:left}
 .byok-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
 .byok-active-text{font-size:11px;line-height:1.7;color:var(--accent-ink)}
-.byok-count{display:block;font:500 10px/1.6 var(--font-mono);letter-spacing:.6px;color:var(--muted);margin-top:2px}
+.byok-count{display:block;font:500 10px/1.6 var(--font-mono);letter-spacing:.6px;color:var(--ink-2);margin-top:2px}
 
 /* ---- 初稿区 ---- */
 .preview-card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
@@ -247,7 +250,8 @@ legend{padding:0;font-family:var(--font-display);font-size:19px;font-weight:500;
 .preview-foot>span{font-size:15px;color:var(--accent)}
 
 .bottom-note{display:flex;justify-content:space-between;padding:26px 4px 34px;gap:18px;font-size:11px;color:var(--muted)}
-.bottom-note b{font-weight:400;margin:0 9px;color:var(--line-strong)}
+/* 箭头是文字不是装饰线：用边框色当字色会淡到 1.5:1，改用 muted */
+.bottom-note b{font-weight:400;margin:0 9px;color:var(--muted)}
 footer{position:relative;border-top:1px solid var(--ink);display:flex;justify-content:space-between;
   gap:20px;padding:20px 0;font-size:10px;color:var(--muted);letter-spacing:.4px}
 footer::after{content:"";position:absolute;right:0;top:-1px;width:64px;height:3px;background:var(--accent)}
@@ -332,7 +336,7 @@ footer::after{content:"";position:absolute;right:0;top:-1px;width:64px;height:3p
 html[data-theme="dark"]{
   color-scheme:dark;
   --bg:#191512; --surface:#221d18; --ink:#ece4d6; --ink-2:#bfb4a2;
-  --muted:#8d8172; --line:#2c2620; --line-strong:#3d362c;
+  --muted:#9a8f7d; --line:#2c2620; --line-strong:#3d362c;
   --accent:#d4674f; --accent-ink:#e08a74; --accent-soft:#2a1c16; --on-accent:#1b1512;
   --shadow-soft:0 1px 2px #00000059,0 20px 36px -26px #000000a6;
   color:var(--ink);
@@ -343,6 +347,6 @@ html[data-theme="dark"]{
 }
 html[data-theme="dark"] body{background:var(--bg)}
 html[data-theme="dark"] .tea-liquid{box-shadow:inset 0 2px 0 #ffffff2e}
-html[data-theme="dark"] .tea-stamp span{color:#1b1512b8}
+html[data-theme="dark"] .tea-stamp span{color:#1b1512f2}
 html[data-theme="dark"] .tea-stamp b::after{background:#1b1512a6}
 html[data-theme="dark"] .spinner{border-color:#1b151259;border-top-color:var(--on-accent)}
