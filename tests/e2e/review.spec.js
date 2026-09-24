@@ -25,7 +25,7 @@ test('桌面：标签限制、生成、编辑、复制与平台切换', async ({
   await expect(page.getByText('标签或平台已更改')).toBeVisible();
   await expect(page.getByRole('button', { name: /复制文案并打开平台/ })).toBeDisabled();
   await page.getByRole('button', { name: '重新生成评价' }).click();
-  await expect(page.getByRole('textbox', { name: '评价内容' })).toHaveValue(/服务好、出餐快/);
+  await expect(page.getByRole('textbox', { name: '评价内容' })).toHaveValue(/服务好贴心/);
   await expect(page.getByRole('textbox', { name: '评价内容' })).not.toHaveValue(/friendly/);
   await page.screenshot({ path: 'docs/生成结果预览.png', fullPage: true });
 });
