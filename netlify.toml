@@ -6,7 +6,7 @@
 [build.environment]
   NODE_VERSION = "22"
   # 模型名称是公开配置，不是密钥；避免它被 Netlify Secret Scanner 误判。
-  SECRETS_SCAN_OMIT_KEYS = "DEEPSEEK_MODEL"
+  SECRETS_SCAN_OMIT_KEYS = "AI_MODEL,DEEPSEEK_MODEL"
 
 [functions]
   directory = "netlify/functions"

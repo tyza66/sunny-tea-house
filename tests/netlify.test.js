@@ -57,7 +57,7 @@ test('Netlify 密钥缺失和上游认证错误均不泄露服务细节', async 
   const missing = createNetlifyHandler('reviews', { getEnv: () => ({ DEMO_MODE: 'false' }) });
   assert.equal((await missing(request(input))).status, 500);
   const rejected = createNetlifyHandler('reviews', {
-    getEnv: () => ({ DEMO_MODE: 'false', DEEPSEEK_API_KEY: 'test-secret' }),
+    getEnv: () => ({ DEMO_MODE: 'false', AI_API_KEY: 'test-secret' }),
     fetchImpl: async () => new Response('private upstream secret', { status: 401 }),
   });
   const response = await rejected(request(input));

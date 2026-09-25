@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createApp } from '../server/app.js';
 import { readConfig } from '../server/config.js';
-import { validateInput, buildMessages, generateReview, callDeepSeek, notifyWechat } from '../server/reviews.js';
+import { validateInput, buildMessages, generateReview, callAI, notifyWechat } from '../server/reviews.js';
 
 const config = readConfig({});
 test('拒绝非法平台、空标签、重复标签和超额标签', () => {
@@ -19,13 +19,13 @@ test('两种平台演示内容与所选标签对应，小红书不超过 150 字
   assert.match(buildMessages({ platform: '小红书', tags: ['服务好'] }, config.store)[0].content, /不虚构/);
 });
 test('真实模式缺少密钥或平台链接不合法时拒绝启动', () => {
-  assert.throws(() => readConfig({ DEMO_MODE: 'false' }), /DEEPSEEK_API_KEY/);
+  assert.throws(() => readConfig({ DEMO_MODE: 'false' }), /AI_API_KEY/);
   assert.throws(() => readConfig({ GOOGLE_REVIEW_URL: 'https://evilgoogle.com' }), /HTTPS/);
   assert.throws(() => readConfig({ GOOGLE_REVIEW_URL: 'javascript:alert(1)' }), /HTTPS/);
   assert.throws(() => readConfig({ ENABLE_WECHAT_NOTIFY: 'true', WECHAT_WEBHOOK_URL: 'https://example.com' }));
 });
 test('DeepSeek 官方地址、服务端认证和正常响应', async () => {
-  const output = await callDeepSeek([], { ...config, apiKey: 'test-secret' }, async (url, options) => {
+  const output = await callAI([], { ...config, apiKey: 'test-secret' }, async (url, options) => {
     assert.equal(url, 'https://api.deepseek.com/chat/completions');
     assert.equal(options.headers.Authorization, 'Bearer test-secret');
     const body = JSON.parse(options.body);
@@ -35,15 +35,43 @@ test('DeepSeek 官方地址、服务端认证和正常响应', async () => {
   });
   assert.equal(output, '正常初稿');
 });
+test('AI_* 通用环境变量可指向任意 OpenAI 兼容服务商，旧名继续作别名', () => {
+  const fallback = readConfig({ DEMO_MODE: 'false', AI_API_KEY: 'k1' });
+  assert.equal(fallback.endpoint, 'https://api.deepseek.com/chat/completions');
+  assert.equal(fallback.model, 'deepseek-v4-flash');
+  const openai = readConfig({ DEMO_MODE: 'false', AI_API_KEY: 'k2', AI_BASE_URL: 'https://api.openai.com/v1/', AI_MODEL: 'gpt-4o-mini' });
+  assert.equal(openai.endpoint, 'https://api.openai.com/v1/chat/completions');
+  assert.equal(openai.model, 'gpt-4o-mini');
+  // 本机自建服务允许 HTTP 自测；公网地址必须 HTTPS，密钥不过明文网。
+  assert.equal(readConfig({ DEMO_MODE: 'false', AI_API_KEY: 'k', AI_BASE_URL: 'http://127.0.0.1:8000/v1' }).endpoint, 'http://127.0.0.1:8000/v1/chat/completions');
+  assert.throws(() => readConfig({ DEMO_MODE: 'false', AI_API_KEY: 'k', AI_BASE_URL: 'http://example.com' }), /HTTPS/);
+  // 旧部署按 DeepSeek 旧名配置的变量继续生效，缺密钥提示用新名。
+  const legacy = readConfig({ DEMO_MODE: 'false', DEEPSEEK_API_KEY: 'k3', DEEPSEEK_MODEL: 'deepseek-chat' });
+  assert.equal(legacy.apiKey, 'k3');
+  assert.equal(legacy.model, 'deepseek-chat');
+  assert.throws(() => readConfig({ DEMO_MODE: 'false' }), /AI_API_KEY/);
+});
+
+test('生成请求发往环境变量指定的服务商地址与模型', async () => {
+  const settings = readConfig({ DEMO_MODE: 'false', AI_API_KEY: 'test-secret', AI_BASE_URL: 'https://api.example-ai.com/v1', AI_MODEL: 'custom-model' });
+  const output = await callAI([], settings, async (url, options) => {
+    assert.equal(url, 'https://api.example-ai.com/v1/chat/completions');
+    assert.equal(options.headers.Authorization, 'Bearer test-secret');
+    assert.equal(JSON.parse(options.body).model, 'custom-model');
+    return Response.json({ choices: [{ message: { content: ' 通用服务商初稿 ' } }] });
+  });
+  assert.equal(output, '通用服务商初稿');
+});
+
 test('上游认证、限流、空响应和网络错误显示可理解提示', async () => {
   for (const status of [401, 402, 429, 500]) {
-    await assert.rejects(callDeepSeek([], config, async () => new Response('secret upstream details', { status })), error => {
+    await assert.rejects(callAI([], config, async () => new Response('secret upstream details', { status })), error => {
       assert.ok(!error.message.includes('secret')); return true;
     });
   }
-  await assert.rejects(callDeepSeek([], config, async () => Response.json({})), /未收到有效/);
-  await assert.rejects(callDeepSeek([], config, async () => Response.json({ choices: [{ finish_reason: 'length', message: { content: '未完成' } }] })), /未完整结束/);
-  await assert.rejects(callDeepSeek([], config, async () => { throw new Error('network'); }), /无法连接/);
+  await assert.rejects(callAI([], config, async () => Response.json({})), /未收到有效/);
+  await assert.rejects(callAI([], config, async () => Response.json({ choices: [{ finish_reason: 'length', message: { content: '未完成' } }] })), /未完整结束/);
+  await assert.rejects(callAI([], config, async () => { throw new Error('network'); }), /无法连接/);
 });
 test('小红书超限只重试一次，再超限明确失败', async () => {
   let calls = 0;

@@ -10,7 +10,7 @@ export function createApp(config, dependencies = {}) {
   app.use((_req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    // connect-src 放行 DeepSeek 一个来源：静态托管下顾客自带密钥时由浏览器直连，与自带密钥面板的说明保持一致。
+    // connect-src 放行 DeepSeek 一个来源：仅服务于静态托管下评审者自带密钥的浏览器直连；服务端出站地址由 AI_BASE_URL 决定，不受 CSP 约束。
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.deepseek.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
     next();
   });
