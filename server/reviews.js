@@ -49,6 +49,11 @@ export async function callAI(messages, config, fetchImpl = fetch, maxTokens = 80
     const message = response.status === 401 ? '生成服务的密钥无效，请联系店家检查配置。'
       : response.status === 402 ? '生成服务余额不足，请联系店家处理。'
       : response.status === 429 ? '生成服务繁忙，请稍后重试。' : '生成服务暂不可用，请稍后重试。';
+    // 上游真实状态码与响应体只写服务端日志，用于区分密钥无效/模型不可用/余额不足等 502 根因；
+    // 不回传前端（前端只见归一化中文），也不进入 message，避免泄露上游细节。
+    let upstreamDetail = '';
+    try { upstreamDetail = (await response.text()).replace(/\s+/g, ' ').trim().slice(0, 300); } catch { /* 读取失败不影响错误归一化 */ }
+    console.error(`[上游错误] ${config?.endpoint || '未知端点'} 返回 ${response.status}: ${upstreamDetail}`);
     throw new ServiceError(response.status === 429 ? 429 : 502, message);
   }
   let data;
