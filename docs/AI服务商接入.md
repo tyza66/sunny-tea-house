@@ -2,6 +2,8 @@
 
 本项目通过一组通用的 `AI_*` 环境变量对接任何 **OpenAI 兼容**服务商（官方 `/chat/completions` 接口 + `Bearer` 认证）。默认值即 DeepSeek，换服务商只改变量、不改代码。
 
+GitHub Pages 静态演示没有服务端、不读环境变量：服务商在页面右下角「本地设置」里填（任意 OpenAI 兼容接口 + 模型名 + 自己的密钥），只保存在本机浏览器。下面的 `AI_*` 环境变量是 Netlify 真实模式的配置路径。
+
 当前网站：使用 Netlify CLI 或代码仓库部署后，在 Netlify 控制台查看你的站点地址。
 
 新版包含 Netlify Functions，不能只上传 out 文件夹；需要通过 Netlify CLI 或代码仓库完整部署。
