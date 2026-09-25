@@ -1,5 +1,5 @@
 {
-  "name": "yichayiyan",
+  "name": "sunny-tea-house",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,8 @@
     "build": "vite build",
     "test": "node --test tests/*.test.js",
     "test:e2e": "playwright test",
-    "build:netlify": "vite build --mode netlify --outDir out"
+    "build:netlify": "vite build --mode netlify --outDir out",
+    "docs:pdf": "node scripts/render-pdf.mjs"
   },
   "dependencies": {
     "dotenv": "^16.6.1",

@@ -118,6 +118,8 @@ npm run build   生产构建，产物 dist/
 
 Netlify 侧由 `netlify.toml` 执行 `npm run build:netlify`，产物与函数一并部署。
 
+交付文档的 PDF 由 `scripts/render-pdf.mjs` 从 Markdown 渲染：改完 `docs/交付文档.md` 后执行 `npm run docs:pdf`，即可重新生成 `docs/交付文档.pdf`（渲染用的浏览器已随开发依赖安装，无需额外准备）。
+
 ## 7. 项目资料
 
 - [任务交付文档](docs/交付文档.md)（[PDF 版](docs/交付文档.pdf)）：在线演示、AI 工具使用策略、Prompt 设计、Webhook 与 Key 安全说明。
