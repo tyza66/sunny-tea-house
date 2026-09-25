@@ -44,19 +44,23 @@
 5. 重新部署后打开 `https://你的站点.netlify.app/api/config`。能返回 JSON 且生成请求仍报 401，通常表示 Key 已撤销、复制不完整或账号余额/权限异常；请在 Netlify Functions 日志确认请求状态。
 6. 换过服务商仍失败时，先核对 `AI_BASE_URL` 是否需要带 `/v1` 路径、`AI_MODEL` 是否为该账号可用的模型。
 
-**线上 Key 不需要修改任何 Vue 文件，也不需要发给助手。** 根目录 `.env` 用于本机运行；修改它不能更新已经部署的网站。
+**线上 Key 不需要修改任何 Vue 文件，也不需要发给助手。** 仓库里没有 `.env` 文件，配置只存在于 Netlify 环境变量；改动环境变量后必须重新部署才会生效。
 
 ## 第二步：更新已有 Netlify 项目
 
-最方便：双击项目根目录的 **部署到Netlify.cmd**。脚本会检查登录状态，未登录时引导你在浏览器授权，然后构建并更新已有项目。授权需要你本人确认，不需要把 Token 发到聊天里。
+推荐用仓库连接，让 Netlify 自己构建，本地不需要任何操作：
 
-也可以在项目目录用 PowerShell 手动执行：
+1. Netlify 后台 **Project configuration → Build & deploy → Continuous Deployment**，把仓库 `tyza66/sunny-tea-house` 关联到站点。
+2. 之后每次推送 `main`，Netlify 自动执行 `netlify.toml` 里的 `npm run build:netlify`，同时发布 `out/` 页面与 `netlify/functions` 函数。
+3. 改过环境变量后，到 **Deploys → Trigger deploy → Deploy site** 触发一次，运行中的函数才会读到新值。
 
-```powershell
-npm.cmd ci
-npx.cmd netlify login
-npm.cmd run build:netlify
-npx.cmd netlify deploy --prod --no-build --dir=out --functions=netlify/functions
+如果站点原本是 CLI 手动部署的，也可以继续用 Netlify CLI（需要本机 Node.js 22+）：
+
+```bash
+npm ci
+npx netlify login
+npm run build:netlify
+npx netlify deploy --prod --no-build --dir=out --functions=netlify/functions
 ```
 
 部署时 Netlify CLI 会使用当前登录账号关联的项目；如果 CLI 提示找不到项目，请确认当前登录账号拥有此项目，或在项目后台复制 Project ID 后通过 `--site` 指定。
