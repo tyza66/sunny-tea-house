@@ -19,7 +19,7 @@ beforeEach(() => localStorage.clear());
 
 test('没有本机配置时读取默认值，且未标记密钥', () => {
   const settings = readSettings();
-  assert.equal(settings.storeName, 'Sunny Tea House');
+  assert.equal(settings.storeName, '一茶一言');
   assert.equal(settings.storeCity, 'San Jose');
   assert.equal(settings.googleReviewUrl, '');
   assert.equal(settings.xiaohongshuUrl, 'https://www.xiaohongshu.com/');
@@ -162,7 +162,7 @@ test('清除密钥只移除密钥本身，其余配置保留', () => {
 test('保存配置不会覆盖已经存好的密钥', () => {
   saveSettings({ storeName: 'Hill Tea' });
   setStoredKey('sk-0123456789abcdefghij');
-  saveSettings({ storeName: 'Sunny Tea House', aiModel: 'other-model' });
+  saveSettings({ storeName: '一茶一言', aiModel: 'other-model' });
   assert.equal(getStoredKey(), 'sk-0123456789abcdefghij');
   assert.equal(readSettings().aiModel, 'other-model');
 });

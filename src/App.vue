@@ -9,7 +9,7 @@ import { readSettings, saveSettings, resetSettings, setStoredKey, clearStoredKey
 
 const { locale, t } = useI18n();
 
-const THEME_KEY = 'sunny.theme';
+const THEME_KEY = 'yichayiyan.theme';
 const theme = ref(readPreference(THEME_KEY, '') || 'light');
 function applyTheme() {
   document.documentElement.dataset.theme = theme.value;
@@ -18,9 +18,9 @@ function applyTheme() {
 }
 watch(theme, value => { savePreference(THEME_KEY, value); applyTheme(); }, { immediate: true });
 function toggleTheme() { theme.value = theme.value === 'dark' ? 'light' : 'dark'; }
-const savedOutput = readPreference('sunny.reviewLanguage', 'auto');
+const savedOutput = readPreference('yichayiyan.reviewLanguage', 'auto');
 const reviewLanguage = ref(isLanguage(savedOutput) ? savedOutput : 'auto');
-watch(reviewLanguage, value => { savePreference('sunny.reviewLanguage', value); confirmed.value = false; notice.value = ''; });
+watch(reviewLanguage, value => { savePreference('yichayiyan.reviewLanguage', value); confirmed.value = false; notice.value = ''; });
 
 const config = ref(null);
 // 静态托管（GitHub Pages 等）没有服务端：右下角的设置面板就是这套页面的「环境变量」，
@@ -75,7 +75,7 @@ const targetUrl = computed(() => config.value?.urls[generatedFor.value?.platform
 const generationNote = computed(() => (config.value?.demo
   ? (aiReady.value ? 'aiActive' : staticHost.value ? 'settingsFabHint' : 'demoNote')
   : 'aiNote'));
-watch([locale, config], () => { document.title = `${config.value?.store.name || 'Sunny Tea House'} · ${t('assistant')}`; }, { immediate: true });
+watch([locale, config], () => { document.title = `${config.value?.store.name || '一茶一言'} · ${t('assistant')}`; }, { immediate: true });
 
 async function loadConfig() {
   error.value = '';
@@ -297,8 +297,8 @@ async function copyAndRedirect() {
   <div class="site-shell">
     <header class="site-header">
       <a class="brand" href="./" :aria-label="t('home')">
-        <img src="/sun.svg" width="44" height="44" alt="" />
-        <span>{{ config?.store.name || 'Sunny Tea House' }}<small>{{ t('tagline') }}</small></span>
+        <img src="/cup.svg" width="44" height="44" alt="" />
+        <span>{{ config?.store.name || '一茶一言' }}<small>{{ t('tagline') }}</small></span>
       </a>
       <div class="header-meta">
         <div ref="pickerElement" class="language-picker">
@@ -329,7 +329,7 @@ async function copyAndRedirect() {
 
     <main>
       <section class="intro">
-        <div><p class="eyebrow">YOUR TEA, YOUR WORDS</p><h1>{{ t('hero1') }}<br class="mobile-break" /> {{ t('hero2') }}<span>{{ locale.startsWith('zh') ? '。' : '.' }}</span></h1><p class="intro-copy">{{ t('intro') }}</p></div>
+        <div><p class="eyebrow">ONE CUP, ONE WORD</p><h1>{{ t('hero1') }}<br class="mobile-break" /> {{ t('hero2') }}<span>{{ locale.startsWith('zh') ? '。' : '.' }}</span></h1><p class="intro-copy">{{ t('intro') }}</p></div>
         <div class="tea-stamp" aria-hidden="true"><span>现泡</span><b>茶</b><span>手作</span></div>
       </section>
 
@@ -387,7 +387,7 @@ async function copyAndRedirect() {
             <p v-else-if="!targetUrl" class="generation-note">{{ t('noGoogle') }}</p>
           </template>
           <div v-else class="empty-preview">
-            <div class="tea-illustration" aria-hidden="true"><span class="spark one">✦</span><span class="spark two">✧</span><div class="straw"></div><div class="cup"><div class="tea-liquid"></div><div class="cup-label"><img src="/sun.svg" alt="" width="30" height="30" /><span>SUNNY TEA</span></div><i></i><i></i><i></i></div><div class="cup-shadow"></div></div>
+            <div class="tea-illustration" aria-hidden="true"><span class="spark one">✦</span><span class="spark two">✧</span><div class="straw"></div><div class="cup"><div class="tea-liquid"></div><div class="cup-label"><img src="/cup.svg" alt="" width="30" height="30" /><span>YICHA YIYAN</span></div><i></i><i></i><i></i></div><div class="cup-shadow"></div></div>
             <h3>{{ t(isLoading ? 'brewing' : 'emptyTitle') }}</h3><p>{{ t(isLoading ? 'waiting' : 'emptyHint') }}</p>
           </div>
           <p v-if="notice" class="notice" role="status">{{ t(notice) }}</p>
@@ -459,6 +459,6 @@ async function copyAndRedirect() {
         </div>
       </div>
     </template>
-    <footer><span>© {{ new Date().getFullYear() }} {{ config?.store.name || 'Sunny Tea House' }}</span><span>{{ t('fictional') }} · {{ config?.store.city || 'San Jose' }}</span></footer>
+    <footer><span>© {{ new Date().getFullYear() }} {{ config?.store.name || '一茶一言' }}</span><span>{{ t('fictional') }} · {{ config?.store.city || 'San Jose' }}</span></footer>
   </div>
 </template>

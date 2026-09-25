@@ -10,7 +10,7 @@ export function savePreference(key, value) {
   try { localStorage.setItem(key, value); } catch { /* 忽略存储权限错误。 */ }
 }
 function initialLanguage() {
-  const saved = readPreference('sunny.uiLanguage', '');
+  const saved = readPreference('yichayiyan.uiLanguage', '');
   if (isLanguage(saved)) return saved;
   for (const value of navigator.languages || [navigator.language]) {
     const code = value.toLowerCase();
@@ -25,7 +25,7 @@ export function useI18n() {
   const locale = ref(initialLanguage());
   watch(locale, value => {
     document.documentElement.lang = value;
-    savePreference('sunny.uiLanguage', value);
+    savePreference('yichayiyan.uiLanguage', value);
   }, { immediate: true });
   const t = key => messages[key]?.[LANGUAGES.findIndex(language => language.code === locale.value)] || messages[key]?.[2] || key;
   return { locale, t };

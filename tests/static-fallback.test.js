@@ -70,7 +70,7 @@ test('getShopConfig 在接口 404 时回退为本地演示配置', async () => {
   await withFetch(async () => jsonResponse(404, {}), async () => {
     const config = await getShopConfig();
     assert.equal(config.demo, true);
-    assert.equal(config.store.name, 'Sunny Tea House');
+    assert.equal(config.store.name, '一茶一言');
     assert.ok(config.tags.length >= 6);
   });
 });
@@ -83,7 +83,7 @@ test('配置读取失败后，生成不再请求接口，直接返回本地演�
     const result = await requestReview({ platform: 'Google', tags: ['服务好'], language: 'auto' });
     assert.equal(result.demo, true);
     assert.equal(result.language, 'en');
-    assert.ok(result.content.includes('Sunny Tea House'));
+    assert.ok(result.content.includes('一茶一言'));
   });
 });
 

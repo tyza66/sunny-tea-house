@@ -53,10 +53,10 @@ test('静态托管：设置面板保存密钥后经浏览器直连生成真实�
   await expect(page.getByText('本地配置')).toBeHidden();
   // 密钥只以混淆形式写进本机浏览器：存储里有记录，但任何位置都找不到原文。
   const stored = await page.evaluate(() => JSON.stringify(window.localStorage));
-  expect(stored).toContain('sunny.settings');
+  expect(stored).toContain('yichayiyan.settings');
   expect(stored).not.toContain(KEY);
   // 存进去的确实是混淆后的形态：密钥原文不在存储里，混淆值与原值不同。
-  const obscured = await page.evaluate(() => JSON.parse(localStorage.getItem('sunny.settings')).key);
+  const obscured = await page.evaluate(() => JSON.parse(localStorage.getItem('yichayiyan.settings')).key);
   expect(obscured).toBeTruthy();
   expect(obscured).not.toBe(KEY);
   await page.getByRole('button', { name: '服务好' }).click();

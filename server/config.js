@@ -43,7 +43,7 @@ export function readConfig(env = process.env) {
       throw new Error('请配置有效的企业微信群机器人 Webhook 地址');
     }
   }
-  const store = { name: env.STORE_NAME || 'Sunny Tea House', city: env.STORE_CITY || 'San Jose' };
+  const store = { name: env.STORE_NAME || '一茶一言', city: env.STORE_CITY || 'San Jose' };
   // Google 未配置商家链接时，默认跳到 Google 地图搜索该店（海外店页面入口）。
   const googleUrl = platformUrl(env.GOOGLE_REVIEW_URL, ['google.com', 'g.page', 'maps.app.goo.gl'], 'GOOGLE_REVIEW_URL')
     || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${store.name} ${store.city}`)}`;
