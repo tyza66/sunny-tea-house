@@ -26,12 +26,13 @@ jobs:
       - run: npm ci
       - name: Run unit tests
         run: npm test
+      # 端到端要打 dist/：服务端把 dist/ 当静态根目录，必须先构建再跑用例。
+      - run: npm run build
       # 端到端门禁：单测只覆盖纯逻辑模块，无法发现组件 setup 一执行就崩、页面白屏一类问题。
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: Run end-to-end tests
         run: npm run test:e2e
-      - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
