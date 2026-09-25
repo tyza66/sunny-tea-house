@@ -3,7 +3,7 @@
 // 店铺信息、平台链接与 AI 服务地址按明文保存，便于迁移与核对；AI 密钥可以保存，
 // 但写入 localStorage 前先做一次可逆混淆，避免被顺手扫到原文——这是防窥探，
 // 不是加密强度（密钥终究要在浏览器里使用，脚本与混淆口令同在客户端）。
-export const SETTINGS_KEY = 'yichayiyan.settings';
+export const SETTINGS_KEY = 'sunny.settings';
 const DEFAULT_SETTINGS = {
   storeName: 'Sunny Tea House',
   storeCity: 'San Jose',
@@ -16,7 +16,7 @@ const DEFAULT_SETTINGS = {
 const GOOGLE_DOMAINS = ['google.com', 'g.page', 'maps.app.goo.gl'];
 const XHS_DOMAINS = ['xiaohongshu.com', 'xhslink.com'];
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '::1'];
-const OBSCURE_PASSPHRASE = 'yichayiyan · local only';
+const OBSCURE_PASSPHRASE = 'sunny tea house · local only';
 
 function readRaw() {
   try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') || {}; }

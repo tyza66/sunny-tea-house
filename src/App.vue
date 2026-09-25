@@ -9,7 +9,7 @@ import { readSettings, saveSettings, resetSettings, setStoredKey, clearStoredKey
 
 const { locale, t } = useI18n();
 
-const THEME_KEY = 'yichayiyan.theme';
+const THEME_KEY = 'sunny.theme';
 const theme = ref(readPreference(THEME_KEY, '') || 'light');
 function applyTheme() {
   document.documentElement.dataset.theme = theme.value;
@@ -18,9 +18,9 @@ function applyTheme() {
 }
 watch(theme, value => { savePreference(THEME_KEY, value); applyTheme(); }, { immediate: true });
 function toggleTheme() { theme.value = theme.value === 'dark' ? 'light' : 'dark'; }
-const savedOutput = readPreference('yichayiyan.reviewLanguage', 'auto');
+const savedOutput = readPreference('sunny.reviewLanguage', 'auto');
 const reviewLanguage = ref(isLanguage(savedOutput) ? savedOutput : 'auto');
-watch(reviewLanguage, value => { savePreference('yichayiyan.reviewLanguage', value); confirmed.value = false; notice.value = ''; });
+watch(reviewLanguage, value => { savePreference('sunny.reviewLanguage', value); confirmed.value = false; notice.value = ''; });
 
 const config = ref(null);
 // 静态托管（GitHub Pages 等）没有服务端：右下角的设置面板就是这套页面的「环境变量」，

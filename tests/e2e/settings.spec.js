@@ -16,7 +16,7 @@ async function useStaticHost(page) {
 const keyInput = page => page.getByRole('textbox', { name: /AI 密钥/ });
 const baseUrlInput = page => page.getByRole('textbox', { name: '接口地址（OpenAI 兼容）' });
 const aiActive = page => page.locator('.ai-active');
-const savedSettings = page => page.evaluate(() => JSON.parse(localStorage.getItem('yichayiyan.settings')) || {});
+const savedSettings = page => page.evaluate(() => JSON.parse(localStorage.getItem('sunny.settings')) || {});
 
 test.use({ locale: 'zh-CN' });
 

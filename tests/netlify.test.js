@@ -7,7 +7,7 @@ import { config as configRouting } from '../netlify/functions/shop-config.mjs';
 const request = (body, method = 'POST') => new Request('https://example.netlify.app/api/reviews', {
   method, ...(method === 'POST' ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
 });
-const input = { tags: ['服务好'], platform: 'Google', language: 'fr-CA' };
+const INPUT = { tags: ['服务好'], platform: 'Google', language: 'fr-CA' };
 
 test('Netlify 路由和分布式限流配置对应前端接口', () => {
   assert.equal(reviewRouting.path, '/api/reviews');
@@ -39,7 +39,7 @@ test('Netlify 真实模式把密钥发往 DeepSeek，返回所选语言', async 
       return Response.json({ choices: [{ message: { content: 'Le service était attentionné.' } }] });
     },
   });
-  const response = await handler(request(input));
+  const response = await handler(request(INPUT));
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { content: 'Le service était attentionné.', platform: 'Google', language: 'fr-CA', demo: false });
   assert.equal(count, 1);
@@ -48,19 +48,19 @@ test('Netlify 真实模式把密钥发往 DeepSeek，返回所选语言', async 
 test('Netlify 拒绝错误方法、无效数据及超大请求体', async () => {
   const handler = createNetlifyHandler('reviews', { getEnv: () => ({}) });
   assert.equal((await handler(request(null, 'GET'))).status, 405);
-  assert.equal((await handler(request({ ...input, language: 'invalid' }))).status, 400);
-  assert.equal((await handler(request({ ...input, padding: 'x'.repeat(9000) }))).status, 413);
+  assert.equal((await handler(request({ ...INPUT, language: 'invalid' }))).status, 400);
+  assert.equal((await handler(request({ ...INPUT, padding: 'x'.repeat(9000) }))).status, 413);
   assert.equal((await handler(new Request('https://example.netlify.app/api/reviews', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{' }))).status, 400);
 });
 
 test('Netlify 密钥缺失和上游认证错误均不泄露服务细节', async () => {
   const missing = createNetlifyHandler('reviews', { getEnv: () => ({ DEMO_MODE: 'false' }) });
-  assert.equal((await missing(request(input))).status, 500);
+  assert.equal((await missing(request(INPUT))).status, 500);
   const rejected = createNetlifyHandler('reviews', {
     getEnv: () => ({ DEMO_MODE: 'false', AI_API_KEY: 'test-secret' }),
     fetchImpl: async () => new Response('private upstream secret', { status: 401 }),
   });
-  const response = await rejected(request(input));
+  const response = await rejected(request(INPUT));
   assert.equal(response.status, 502);
   const body = await response.text();
   assert.match(body, /密钥无效/);

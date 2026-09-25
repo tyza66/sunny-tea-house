@@ -5,7 +5,7 @@ import { normalizeKey, setBrowserKey, clearBrowserKey, hasBrowserKey, sessionUsa
 import { buildMessages } from '../shared/prompt.js';
 import { getShopConfig, requestReview, isStaticHost } from '../src/api.js';
 
-const store = { name: 'Sunny Tea House', city: 'San Jose' };
+const STORE = { name: 'Sunny Tea House', city: 'San Jose' };
 
 function jsonResponse(status, body) {
   return {
@@ -74,7 +74,7 @@ test('请求直连 DeepSeek 官方接口，载荷与服务端提示词、参数�
   assert.equal(calls[0].body.model, 'deepseek-v4-flash');
   assert.equal(calls[0].body.max_tokens, 800);
   assert.deepEqual(calls[0].body.thinking, { type: 'disabled' });
-  assert.deepEqual(calls[0].body.messages, buildMessages({ platform: 'Google', tags: ['服务好'], language: 'en' }, store));
+  assert.deepEqual(calls[0].body.messages, buildMessages({ platform: 'Google', tags: ['服务好'], language: 'en' }, STORE));
   assert.ok(!String(calls[0].url).includes('sk-'));
   clearBrowserKey();
 });
@@ -84,8 +84,8 @@ test('会话计数累计，用于提示评审者额度消耗', async () => {
   assert.equal(setBrowserKey('sk-0123456789abcdefghij'), true);
   assert.equal(sessionUsage(), 0);
   await withFetch(async () => jsonResponse(200, { choices: [{ message: { content: '草稿一' } }] }), async () => {
-    await generateWithBrowserKey({ platform: '小红书', tags: ['服务好'], language: 'zh-CN' }, store);
-    await generateWithBrowserKey({ platform: '小红书', tags: ['服务好'], language: 'zh-CN' }, store);
+    await generateWithBrowserKey({ platform: '小红书', tags: ['服务好'], language: 'zh-CN' }, STORE);
+    await generateWithBrowserKey({ platform: '小红书', tags: ['服务好'], language: 'zh-CN' }, STORE);
   });
   assert.equal(sessionUsage(), 2);
   clearBrowserKey();
@@ -95,7 +95,7 @@ test('401 提示密钥无效并标记清除；402 保留密钥提示余额不足
   await useStaticMode();
   assert.equal(setBrowserKey('sk-0123456789abcdefghij'), true);
   await withFetch(async () => jsonResponse(401, { error: 'invalid' }), async () => {
-    await assert.rejects(() => generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, store), error => {
+    await assert.rejects(() => generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, STORE), error => {
     assert.equal(error.message, 'browserKeyError');
       assert.equal(error.clearKey, true);
       return true;
@@ -103,7 +103,7 @@ test('401 提示密钥无效并标记清除；402 保留密钥提示余额不足
   });
   assert.equal(setBrowserKey('sk-0123456789abcdefghij'), true);
   await withFetch(async () => jsonResponse(402, { error: 'balance' }), async () => {
-    await assert.rejects(() => generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, store), error => {
+    await assert.rejects(() => generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, STORE), error => {
       assert.equal(error.message, 'browserBalanceError');
       assert.equal(error.clearKey, undefined);
       return true;
@@ -123,7 +123,7 @@ test('模型不支持时自动降级 deepseek-chat 一次，两种模型都不�
     if (body.model === 'deepseek-v4-flash') return jsonResponse(400, { error: 'model not supported' });
     return jsonResponse(200, { choices: [{ message: { content: '降级后的初稿' } }] });
   }, async () => {
-    const result = await generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, store);
+    const result = await generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, STORE);
     assert.equal(result.content, '降级后的初稿');
   });
   assert.deepEqual(models, ['deepseek-v4-flash', 'deepseek-chat']);
@@ -131,13 +131,13 @@ test('模型不支持时自动降级 deepseek-chat 一次，两种模型都不�
     if (JSON.parse(options.body).model === 'deepseek-chat') return jsonResponse(200, { choices: [{ message: { content: '正常' } }] });
     return jsonResponse(400, { error: 'model not supported' });
   }, async () => {
-    const result = await generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, store);
+    const result = await generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, STORE);
     assert.equal(result.content, '正常');
   });
   clearBrowserKey();
   assert.equal(setBrowserKey('sk-0123456789abcdefghij'), true);
   await withFetch(async () => jsonResponse(400, { error: 'model not supported' }), async () => {
-    await assert.rejects(() => generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, store), error => {
+    await assert.rejects(() => generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, STORE), error => {
       assert.equal(error.message, 'browserModelError');
       return true;
     });
@@ -157,7 +157,7 @@ test('429、网络错误、超时、空响应与截断内容映射为稳定文�
   ];
   for (const [impl, code] of cases) {
     await withFetch(async () => impl(), async () => {
-      await assert.rejects(() => generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, store), error => {
+      await assert.rejects(() => generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, STORE), error => {
         assert.equal(error.message, code);
         assert.ok(BROWSER_ERROR_KEYS.has(error.message));
         return true;
@@ -175,7 +175,7 @@ test('小红书超过 150 字符时只重试一次，仍超限则明确失败', 
     calls += 1;
     return jsonResponse(200, { choices: [{ message: { content: '茶'.repeat(151) } }] });
   }, async () => {
-    await assert.rejects(() => generateWithBrowserKey({ platform: '小红书', tags: ['服务好'], language: 'zh-CN' }, store), /lengthError/);
+    await assert.rejects(() => generateWithBrowserKey({ platform: '小红书', tags: ['服务好'], language: 'zh-CN' }, STORE), /lengthError/);
   });
   assert.equal(calls, 2);
   calls = 0;
@@ -183,7 +183,7 @@ test('小红书超过 150 字符时只重试一次，仍超限则明确失败', 
     calls += 1;
     return jsonResponse(200, { choices: [{ message: { content: calls === 1 ? '茶'.repeat(151) : '压缩后的文案 🍵' } }] });
   }, async () => {
-    const result = await generateWithBrowserKey({ platform: '小红书', tags: ['服务好'], language: 'zh-CN' }, store);
+    const result = await generateWithBrowserKey({ platform: '小红书', tags: ['服务好'], language: 'zh-CN' }, STORE);
     assert.equal(result.content, '压缩后的文案 🍵');
   });
   assert.equal(calls, 2);
@@ -209,7 +209,7 @@ test('自定义服务商：按面板里的接口地址与模型名请求，且�
     return jsonResponse(400, { error: 'model not supported' });
   }, async () => {
     // 自定义模型不通时按服务商自身报错，不该偷偷改打 DeepSeek。
-    await assert.rejects(() => generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, store), error => {
+    await assert.rejects(() => generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, STORE), error => {
       assert.equal(error.message, 'browserModelError');
       return true;
     });
