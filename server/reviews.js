@@ -1,4 +1,4 @@
-import { isLanguage, resolveLanguage } from '../shared/languages.js';
+import { isLanguage, resolveLanguage, COMMENT_MAX } from '../shared/languages.js';
 
 import { TAGS, demoReview } from '../shared/review-demo.js';
 import { buildMessages } from '../shared/prompt.js';
@@ -20,7 +20,10 @@ export function validateInput(body) {
   if (body.language !== undefined && body.language !== 'auto' && !isLanguage(body.language)) {
     throw new ServiceError(400, '请选择支持的评价语言。');
   }
-  return { platform: body.platform, tags: [...body.tags], language: resolveLanguage(body.language, body.platform) };
+  // 简单点评为可选项：只做字数收敛，空值、缺失或非字符串都按“没有补充”处理。
+  const comment = typeof body.comment === 'string' ? body.comment.trim() : '';
+  if ([...comment].length > COMMENT_MAX) throw new ServiceError(400, '简单点评请控制在 25 字以内。');
+  return { platform: body.platform, tags: [...body.tags], language: resolveLanguage(body.language, body.platform), comment };
 }
 
 export async function callAI(messages, config, fetchImpl = fetch, maxTokens = 800) {

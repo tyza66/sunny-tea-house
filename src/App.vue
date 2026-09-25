@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { LANGUAGES, isLanguage, resolveLanguage, ERROR_KEYS } from '../shared/languages.js';
+import { LANGUAGES, isLanguage, resolveLanguage, ERROR_KEYS, COMMENT_MAX } from '../shared/languages.js';
 import { useI18n, readPreference, savePreference } from './i18n.js';
 import { getShopConfig, requestReview, isStaticHost } from './api.js';
 import { clearBrowserKey, configureBrowserAI, hasBrowserKey, normalizeKey,
@@ -39,6 +39,12 @@ const settingsHasKey = ref(false);
 const settingsError = ref('');
 const settingsForm = ref(blankSettingsForm());
 const selectedTags = ref([]);
+// 可选简单点评：25 字以内，可留空；会进入生成提示词，并纳入“改动即失效”签名。
+const comment = ref('');
+const commentLength = computed(() => [...comment.value].length);
+// 点评改动同样让已生成的初稿作废，需重新生成后再复制。
+// 必须写在 comment 声明之后：watch 的第一个参数会同步访问该 ref，写在前面会触发暂时性死区。
+watch(comment, () => { confirmed.value = false; notice.value = ''; });
 const selectedPlatform = ref('Google');
 const generatedContent = ref('');
 const generatedFor = ref(null);
@@ -61,7 +67,7 @@ const outputLanguage = computed(() => resolveLanguage(reviewLanguage.value, sele
 const languageOptions = computed(() => [{ code: 'auto', label: t('auto') }, ...LANGUAGES]);
 function setReviewLanguage(code) { if (reviewLanguage.value !== code) reviewLanguage.value = code; }
 // 界面语言不参与草稿签名；只改变展示语言不会让已编辑的文案失效。
-const signature = computed(() => JSON.stringify({ platform: selectedPlatform.value, language: outputLanguage.value, tags: [...selectedTags.value].sort() }));
+const signature = computed(() => JSON.stringify({ platform: selectedPlatform.value, language: outputLanguage.value, tags: [...selectedTags.value].sort(), comment: comment.value.trim() }));
 const platformName = platform => platform === '小红书' ? t('redName') : platform;
 const languageName = code => LANGUAGES.find(item => item.code === code)?.label || '';
 const currentLanguageName = computed(() => LANGUAGES.find(item => item.code === locale.value)?.label || '');
@@ -246,7 +252,7 @@ function onMenuFocusout(event) {
 async function generateReview() {
   if (!config.value || isLoading.value || !selectedTags.value.length) return;
   // 保存本次请求快照：评价必须和生成时的平台、标签绑定。
-  const request = { tags: [...selectedTags.value], platform: selectedPlatform.value, language: outputLanguage.value };
+  const request = { tags: [...selectedTags.value], platform: selectedPlatform.value, language: outputLanguage.value, comment: comment.value.trim() };
   const requestSignature = signature.value;
   isLoading.value = true;
   error.value = ''; notice.value = ''; confirmed.value = false;
@@ -341,6 +347,13 @@ async function copyAndRedirect() {
             <legend><span class="step">01</span> {{ t('feeling') }}</legend>
             <p class="field-hint">{{ t('pick') }}<span>{{ selectedTags.length }}/2</span></p>
             <div class="tags"><button v-for="tag in config.tags" :key="tag" type="button" :aria-pressed="selectedTags.includes(tag)" :disabled="!selectedTags.includes(tag) && selectedTags.length >= 2" :class="['tag', { selected: selectedTags.includes(tag) }]" @click="toggleTag(tag)"><span aria-hidden="true">{{ selectedTags.includes(tag) ? '✓' : '+' }}</span>{{ t(tag) }}</button></div>
+          <div class="comment-field">
+            <label class="comment-label" for="comment">{{ t('commentLabel') }}</label>
+            <div class="comment-row">
+              <input id="comment" v-model="comment" type="text" :maxlength="COMMENT_MAX" :placeholder="t('commentPlaceholder')" autocomplete="off" />
+              <span class="comment-count" aria-hidden="true">{{ commentLength }}/{{ COMMENT_MAX }}</span>
+            </div>
+          </div>
           </fieldset>
           <fieldset class="platform-field" :disabled="isLoading">
             <legend><span class="step">02</span> {{ t('where') }}</legend>

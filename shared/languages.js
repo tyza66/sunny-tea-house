@@ -1,4 +1,6 @@
 // 页面语言和评价语言使用同一份白名单；平台标识、感受标签在接口中保持不变。
+export const COMMENT_MAX = 25;
+
 export const LANGUAGES = [
   { code: 'zh-CN', label: '简体中文', prompt: '简体中文' },
   { code: 'zh-TW', label: '繁體中文', prompt: '繁體中文' },
@@ -22,4 +24,5 @@ export const ERROR_KEYS = {
   '文案超出字数限制，请重新生成。': 'lengthError',
   '文案生成未完整结束，请重新生成。': 'incompleteError',
   '未收到有效评价，请重新生成。': 'incompleteError',
+  '简单点评请控制在 25 字以内。': 'commentTooLong',
 };
