@@ -9,7 +9,7 @@ const NO_API_STATUS = new Set([404, 405]);
 let staticFallback = false;
 
 // 静态托管没有服务端环境变量：店铺信息与平台链接取自评审者在本机浏览器里的设置
-// （默认值即 一茶一言），让界面、提示词与跳转链接三者保持一致。
+// （默认值即 Sunny Tea House），让界面、提示词与跳转链接三者保持一致。
 function localStore() {
   const settings = readSettings();
   return { name: settings.storeName, city: settings.storeCity };

@@ -5,7 +5,7 @@
 // 不是加密强度（密钥终究要在浏览器里使用，脚本与混淆口令同在客户端）。
 export const SETTINGS_KEY = 'yichayiyan.settings';
 const DEFAULT_SETTINGS = {
-  storeName: '一茶一言',
+  storeName: 'Sunny Tea House',
   storeCity: 'San Jose',
   googleReviewUrl: '',
   xiaohongshuUrl: 'https://www.xiaohongshu.com/',

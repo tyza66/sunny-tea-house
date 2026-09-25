@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { demoReview, DEMO_VARIANTS, TAGS } from '../shared/review-demo.js';
 import { LANGUAGES } from '../shared/languages.js';
 
-const STORE = { name: '一茶一言', city: '多伦多' };
+const STORE = { name: 'Sunny Tea House', city: '多伦多' };
 const PLATFORMS = ['Google', '小红书'];
 const VARIANTS = [...Array(DEMO_VARIANTS).keys()];
 

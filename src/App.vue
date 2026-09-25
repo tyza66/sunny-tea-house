@@ -75,7 +75,7 @@ const targetUrl = computed(() => config.value?.urls[generatedFor.value?.platform
 const generationNote = computed(() => (config.value?.demo
   ? (aiReady.value ? 'aiActive' : staticHost.value ? 'settingsFabHint' : 'demoNote')
   : 'aiNote'));
-watch([locale, config], () => { document.title = `${config.value?.store.name || '一茶一言'} · ${t('assistant')}`; }, { immediate: true });
+watch([locale, config], () => { document.title = `${config.value?.store.name || 'Sunny Tea House'} · ${t('assistant')}`; }, { immediate: true });
 
 async function loadConfig() {
   error.value = '';
@@ -298,7 +298,7 @@ async function copyAndRedirect() {
     <header class="site-header">
       <a class="brand" href="./" :aria-label="t('home')">
         <img src="/cup.svg" width="44" height="44" alt="" />
-        <span>{{ config?.store.name || '一茶一言' }}<small>{{ t('tagline') }}</small></span>
+        <span>{{ config?.store.name || 'Sunny Tea House' }}<small>{{ t('tagline') }}</small></span>
       </a>
       <div class="header-meta">
         <div ref="pickerElement" class="language-picker">
@@ -387,7 +387,7 @@ async function copyAndRedirect() {
             <p v-else-if="!targetUrl" class="generation-note">{{ t('noGoogle') }}</p>
           </template>
           <div v-else class="empty-preview">
-            <div class="tea-illustration" aria-hidden="true"><span class="spark one">✦</span><span class="spark two">✧</span><div class="straw"></div><div class="cup"><div class="tea-liquid"></div><div class="cup-label"><img src="/cup.svg" alt="" width="30" height="30" /><span>YICHA YIYAN</span></div><i></i><i></i><i></i></div><div class="cup-shadow"></div></div>
+            <div class="tea-illustration" aria-hidden="true"><span class="spark one">✦</span><span class="spark two">✧</span><div class="straw"></div><div class="cup"><div class="tea-liquid"></div><div class="cup-label"><img src="/cup.svg" alt="" width="30" height="30" /><span>SUNNY TEA</span></div><i></i><i></i><i></i></div><div class="cup-shadow"></div></div>
             <h3>{{ t(isLoading ? 'brewing' : 'emptyTitle') }}</h3><p>{{ t(isLoading ? 'waiting' : 'emptyHint') }}</p>
           </div>
           <p v-if="notice" class="notice" role="status">{{ t(notice) }}</p>
@@ -459,6 +459,6 @@ async function copyAndRedirect() {
         </div>
       </div>
     </template>
-    <footer><span>© {{ new Date().getFullYear() }} {{ config?.store.name || '一茶一言' }}</span><span>{{ t('fictional') }} · {{ config?.store.city || 'San Jose' }}</span></footer>
+    <footer><span>© {{ new Date().getFullYear() }} {{ config?.store.name || 'Sunny Tea House' }}</span><span>{{ t('fictional') }} · {{ config?.store.city || 'San Jose' }}</span></footer>
   </div>
 </template>

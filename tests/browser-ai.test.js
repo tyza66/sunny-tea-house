@@ -5,7 +5,7 @@ import { normalizeKey, setBrowserKey, clearBrowserKey, hasBrowserKey, sessionUsa
 import { buildMessages } from '../shared/prompt.js';
 import { getShopConfig, requestReview, isStaticHost } from '../src/api.js';
 
-const store = { name: '一茶一言', city: 'San Jose' };
+const store = { name: 'Sunny Tea House', city: 'San Jose' };
 
 function jsonResponse(status, body) {
   return {

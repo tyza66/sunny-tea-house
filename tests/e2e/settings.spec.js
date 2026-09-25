@@ -37,7 +37,7 @@ test('店铺信息保存后即时反映到页头页脚，刷新仍在，恢复�
   await expect(page.locator('footer')).toContainText('Fremont');
   await page.getByRole('button', { name: '打开本地设置' }).click();
   await page.getByRole('button', { name: '恢复默认' }).click();
-  await expect(page.locator('.site-header')).toContainText('一茶一言');
+  await expect(page.locator('.site-header')).toContainText('Sunny Tea House');
   await expect(page.locator('footer')).toContainText('San Jose');
 });
 
