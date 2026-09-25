@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getShopConfig, requestReview } from '../src/api.js';
+import { getShopConfig, requestReview, isStaticHost } from '../src/api.js';
 
 const BACKEND_CONFIG = { store: { name: 'API 店', city: '测试城' }, demo: false, tags: ['服务好'], urls: {}, notificationEnabled: false };
 
@@ -29,6 +29,41 @@ test('getShopConfig 优先读取后端配置', async () => {
     assert.equal(config.store.name, 'API 店');
     assert.equal(config.demo, false);
   });
+});
+
+test('getShopConfig 网络失败或服务端 5xx 时抛错，不静默回退演示', async () => {
+  await useBackendMode();
+  await withFetch(async () => { throw new TypeError('fetch failed'); }, async () => {
+    await assert.rejects(() => getShopConfig(), TypeError);
+  });
+  await withFetch(async () => jsonResponse(500, {}), async () => {
+    await assert.rejects(() => getShopConfig());
+  });
+  // 抛错时不能顺手置位静态回退：页面应走「重连」，而不是悄悄变成演示模式。
+  assert.equal(isStaticHost(), false);
+});
+
+test('getShopConfig 对全量回退主机的 200 HTML 也判为静态托管', async () => {
+  await useBackendMode();
+  await withFetch(async () => ({
+    ok: true, status: 200,
+    headers: { get: name => (name === 'content-type' ? 'text/html; charset=utf-8' : null) },
+    json: async () => { throw new Error('HTML 解析不成 JSON'); },
+  }), async () => {
+    const config = await getShopConfig();
+    assert.equal(config.demo, true);
+    assert.equal(isStaticHost(), true);
+  });
+});
+
+test('静态托管标志在服务恢复后复位', async () => {
+  await withFetch(async () => jsonResponse(404, {}), async () => { await getShopConfig(); });
+  assert.equal(isStaticHost(), true);
+  await withFetch(async () => jsonResponse(200, BACKEND_CONFIG), async () => {
+    const config = await getShopConfig();
+    assert.equal(config.demo, false);
+  });
+  assert.equal(isStaticHost(), false);
 });
 
 test('getShopConfig 在接口 404 时回退为本地演示配置', async () => {

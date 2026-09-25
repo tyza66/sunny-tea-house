@@ -33,6 +33,18 @@ test('桌面：标签限制、生成、编辑、复制与平台切换', async ({
   await page.screenshot({ path: 'docs/生成结果预览.png', fullPage: true });
 });
 
+test('配置加载失败时展示重连按钮，恢复后正常进入', async ({ page }) => {
+  await page.route('**/api/config', route => route.abort());
+  await page.goto('/');
+  await expect(page.getByText('暂时无法加载店铺信息，请确认服务已启动后重试。')).toBeVisible();
+  // 加载失败不能悄悄变成静态演示：此时不应出现自带密钥入口。
+  await expect(page.getByRole('button', { name: '使用我自己的 AI 密钥' })).toHaveCount(0);
+  await page.unroute('**/api/config');
+  await page.getByRole('button', { name: '重新连接' }).click();
+  await expect(page.getByText('你的这一杯，值得被记录')).toBeVisible();
+  await expect(page.getByRole('button', { name: '生成我的评价' })).toBeDisabled();
+});
+
 test('复制后打开平台，弹窗拦截时提供手动链接', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   // 拦截目标页面：验证跳转机制，不访问外部平台，也不提交任何评价。
