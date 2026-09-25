@@ -164,38 +164,53 @@ legend{padding:0;font-family:var(--font-display);font-size:19px;font-weight:500;
 .generate>span:first-child{margin-right:auto;font-size:19px}
 .generation-note{color:var(--muted);font-size:11px;line-height:1.85;text-align:center;margin:12px 0 0}
 
-/* ---- 自带密钥：静态托管下由浏览器直连 DeepSeek 真实生成 ---- */
-.byok{margin:14px 0 0;border-top:1px dashed var(--line-strong);padding-top:12px;text-align:center}
-.byok-trigger{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:var(--r);
-  padding:8px 13px;background:var(--surface);color:var(--ink-2);font-size:11px;letter-spacing:.3px}
-.byok-trigger:hover:not(:disabled){border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
-.byok-trigger[aria-expanded="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-.byok-trigger svg{flex-shrink:0}
-.byok-panel{margin:12px 0 0;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--bg);
-  padding:16px 16px 14px;display:flex;flex-direction:column;gap:11px;text-align:left;animation:rise .2s ease-out both}
-.byok-heading{font-family:var(--font-display);font-size:13px;font-weight:500;letter-spacing:.06em;color:var(--ink)}
-.byok-intro{font-size:11px;line-height:1.85;color:var(--muted);margin:0}
-.byok-points{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
-.byok-points li{position:relative;padding-left:14px;font-size:11px;line-height:1.75;color:var(--ink-2)}
-.byok-points li::before{content:"";position:absolute;left:0;top:7px;width:6px;height:6px;background:var(--accent)}
-.byok-field{display:flex;flex-direction:column;gap:6px}
-.byok-field>span{font:400 10px/1 var(--font-display);letter-spacing:.4em;color:var(--muted)}
-.byok-field input{width:100%;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--surface);color:var(--ink);
-  padding:10px 12px;font-size:13px;font-family:var(--font-mono);letter-spacing:.4px;min-width:0}
-.byok-field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
-.byok-field.invalid input{border-color:var(--accent-ink)}
-.byok-error{font-size:11px;line-height:1.7;color:var(--accent-ink);margin:0;border-left:2px solid var(--accent);padding-left:9px}
-.byok-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:2px}
-.byok-enable,.byok-remove,.byok-cancel{flex:1;min-width:120px;border:1px solid var(--accent);border-radius:var(--r);
-  padding:10px 12px;font-size:12px;background:var(--accent);color:var(--on-accent)}
-.byok-remove,.byok-cancel{background:transparent;color:var(--ink);border-color:var(--ink)}
-.byok-remove:hover,.byok-cancel:hover{background:var(--ink);color:var(--surface)}
-.byok-enable:hover:not(:disabled){background:var(--accent-ink);border-color:var(--accent-ink)}
-.byok-active{display:flex;align-items:center;gap:10px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--accent);
+/* ---- AI 状态行：静态托管下由设置面板直连服务商真实生成 ---- */
+.ai-state{margin:14px 0 0;border-top:1px dashed var(--line-strong);padding-top:12px;text-align:center}
+.ai-active{display:flex;align-items:center;gap:10px;margin:0;padding:10px 12px;border:1px solid var(--accent);
   border-radius:var(--r);background:var(--accent-soft);text-align:left}
-.byok-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
-.byok-active-text{font-size:11px;line-height:1.7;color:var(--accent-ink)}
-.byok-count{display:block;font:500 10px/1.6 var(--font-mono);letter-spacing:.6px;color:var(--ink-2);margin-top:2px}
+.ai-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.ai-active-text{font-size:11px;line-height:1.7;color:var(--accent-ink)}
+.ai-count{display:block;font:500 10px/1.6 var(--font-mono);letter-spacing:.6px;color:var(--ink-2);margin-top:2px}
+.ai-setup{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:var(--r);
+  padding:8px 13px;background:var(--surface);color:var(--ink-2);font-size:11px;letter-spacing:.3px}
+.ai-setup:hover:not(:disabled){border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+.ai-setup svg{flex-shrink:0}
+
+/* ---- 设置面板：静态托管没有服务端，环境变量改由这个抽屉就地配置 ---- */
+.settings-fab{position:fixed;right:20px;bottom:20px;z-index:60;width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--ink);border-radius:var(--r);background:var(--ink);color:var(--surface);box-shadow:var(--shadow-soft)}
+.settings-fab:hover{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.settings-panel{position:fixed;right:20px;bottom:76px;z-index:59;width:min(380px,calc(100vw - 40px));max-height:min(72vh,620px);
+  overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  display:flex;flex-direction:column;gap:12px;padding:18px 18px 16px;text-align:left;
+  border:1px solid var(--ink);border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow-soft);
+  animation:rise .2s ease-out both}
+.settings-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.settings-kicker{font:400 10px/1 var(--font-display);letter-spacing:.4em;color:var(--muted);margin:0 0 7px}
+.settings-head h2{font-family:var(--font-display);font-size:15px;font-weight:500;letter-spacing:.06em;color:var(--ink);margin:0}
+.settings-close{flex-shrink:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line-strong);border-radius:var(--r);background:transparent;color:var(--muted)}
+.settings-close:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
+.settings-intro{font-size:11px;line-height:1.85;color:var(--muted);margin:0}
+.settings-group{margin:0;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);
+  padding:13px 13px 11px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.settings-group legend{font:400 10px/1 var(--font-display);letter-spacing:.4em;color:var(--muted);padding:0 5px;margin-left:-5px}
+.settings-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.settings-field>span{font:400 10px/1 var(--font-display);letter-spacing:.4em;color:var(--muted)}
+.settings-field input{width:100%;min-width:0;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--surface);color:var(--ink);
+  padding:9px 11px;font-size:13px;font-family:var(--font-mono);letter-spacing:.3px}
+.settings-field input:hover:not(:disabled){border-color:var(--muted)}
+.settings-field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.settings-field input:disabled{opacity:.5;cursor:not-allowed}
+.settings-hint{font-size:10.5px;line-height:1.8;color:var(--muted);margin:0}
+.settings-error{font-size:11px;line-height:1.7;color:var(--accent-ink);margin:0;border-left:2px solid var(--accent);padding-left:9px}
+.settings-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+.settings-save{flex:1;min-width:126px;border:1px solid var(--accent);border-radius:var(--r);
+  padding:10px 12px;font-size:12px;background:var(--accent);color:var(--on-accent)}
+.settings-save:hover:not(:disabled){background:var(--accent-ink);border-color:var(--accent-ink)}
+.settings-clear,.settings-reset{flex:1;min-width:88px;border:1px solid var(--line-strong);border-radius:var(--r);
+  padding:10px 12px;font-size:12px;background:transparent;color:var(--ink-2)}
+.settings-clear:hover:not(:disabled),.settings-reset:hover:not(:disabled){background:var(--ink);border-color:var(--ink);color:var(--surface)}
 
 /* ---- 初稿区 ---- */
 .preview-card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
@@ -320,9 +335,12 @@ footer::after{content:"";position:absolute;right:0;top:-1px;width:64px;height:3p
   footer::after{width:56px}
   .preview-card textarea{min-height:220px}
   .preview-foot{margin-top:16px}
-  .byok-panel{padding:14px}
-  .byok-actions{flex-direction:column}
-  .byok-enable,.byok-remove,.byok-cancel{min-width:0}
+  .settings-fab{right:14px;bottom:14px;width:42px;height:42px}
+  .settings-fab[aria-expanded="true"]{bottom:calc(min(82vh,620px) + 14px)}
+  .settings-panel{left:0;right:0;bottom:0;width:auto;max-height:82vh;border-left:0;border-right:0;border-bottom:0;
+    padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+  .settings-actions{flex-direction:column}
+  .settings-save,.settings-clear,.settings-reset{min-width:0}
   .header-meta{gap:10px}
   .globe-button{height:34px;padding:0 6px}
   .language-menu{top:calc(100% + 9px)}

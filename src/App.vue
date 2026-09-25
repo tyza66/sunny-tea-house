@@ -3,7 +3,9 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { LANGUAGES, isLanguage, resolveLanguage, ERROR_KEYS } from '../shared/languages.js';
 import { useI18n, readPreference, savePreference } from './i18n.js';
 import { getShopConfig, requestReview, isStaticHost } from './api.js';
-import { setBrowserKey, clearBrowserKey, sessionUsage, BROWSER_ERROR_KEYS } from './browser-ai.js';
+import { clearBrowserKey, configureBrowserAI, hasBrowserKey, normalizeKey,
+  sessionUsage, BROWSER_ERROR_KEYS } from './browser-ai.js';
+import { readSettings, saveSettings, resetSettings, setStoredKey, clearStoredKey, getStoredKey, defaultGoogleUrl } from './settings.js';
 
 const { locale, t } = useI18n();
 
@@ -21,17 +23,21 @@ const reviewLanguage = ref(isLanguage(savedOutput) ? savedOutput : 'auto');
 watch(reviewLanguage, value => { savePreference('sunny.reviewLanguage', value); confirmed.value = false; notice.value = ''; });
 
 const config = ref(null);
-// 静态托管（GitHub Pages 等）没有服务端：提供评审者自带密钥入口，直连 DeepSeek 真实生成。
+// 静态托管（GitHub Pages 等）没有服务端：右下角的设置面板就是这套页面的「环境变量」，
+// 填入密钥后由浏览器直连 AI 服务完成真实生成。
 const staticHost = ref(false);
-const byokOpen = ref(false);
-const byokTrigger = ref(null);
-// v-model 只存密钥字符串；输入框 DOM 用单独的 ref，避免和 v-model 撞名。
-const byokInputEl = ref(null);
-const byokKeyInput = ref('');
-const byokActive = ref(false);
-const byokError = ref('');
-const byokCount = ref(0);
-const byokAvailable = computed(() => !!config.value?.demo && staticHost.value);
+const staticDemo = computed(() => !!config.value?.demo && staticHost.value);
+const aiReady = ref(false);
+const aiCount = ref(0);
+const settingsOpen = ref(false);
+// 记录是谁打开的面板，关闭时把焦点还给它，键盘用户不会丢失位置。
+const settingsOpener = ref(null);
+const settingsPanel = ref(null);
+const settingsFirstEl = ref(null);
+const settingsKeyEl = ref(null);
+const settingsHasKey = ref(false);
+const settingsError = ref('');
+const settingsForm = ref(blankSettingsForm());
 const selectedTags = ref([]);
 const selectedPlatform = ref('Google');
 const generatedContent = ref('');
@@ -65,6 +71,10 @@ const characterCount = computed(() => [...generatedContent.value].length);
 const tooLong = computed(() => generatedFor.value?.platform === '小红书' && characterCount.value > 150);
 const canCopy = computed(() => generatedContent.value.trim() && !stale.value && !tooLong.value && !isLoading.value && confirmed.value);
 const targetUrl = computed(() => config.value?.urls[generatedFor.value?.platform] || '');
+// 生成按钮下方的说明：静态托管且未配密钥时，引导去右下角设置。
+const generationNote = computed(() => (config.value?.demo
+  ? (aiReady.value ? 'aiActive' : staticHost.value ? 'settingsFabHint' : 'demoNote')
+  : 'aiNote'));
 watch([locale, config], () => { document.title = `${config.value?.store.name || 'Sunny Tea House'} · ${t('assistant')}`; }, { immediate: true });
 
 async function loadConfig() {
@@ -72,33 +82,109 @@ async function loadConfig() {
   try {
     config.value = await getShopConfig();
     staticHost.value = isStaticHost();
+    // 本地设置要在第一次生成前进入会话：接口地址、模型名与本机保存的密钥都以此为准。
+    if (staticHost.value) syncAiSession();
   } catch { error.value = 'loadError'; }
 }
 
-// 自带密钥：仅写入页面内存；格式不符时原位提示，不发起任何请求。
-function enableByok() {
-  byokError.value = '';
-  if (!setBrowserKey(byokKeyInput.value)) { byokError.value = 'byokFormatError'; return; }
-  byokActive.value = true;
-  byokCount.value = sessionUsage();
-  byokKeyInput.value = '';
-  closeByok(true);
+function blankSettingsForm() {
+  const settings = readSettings();
+  return {
+    storeName: settings.storeName,
+    storeCity: settings.storeCity,
+    googleReviewUrl: settings.googleReviewUrl,
+    xiaohongshuUrl: settings.xiaohongshuUrl,
+    aiBaseUrl: settings.aiBaseUrl,
+    aiModel: settings.aiModel,
+    aiKey: getStoredKey(),
+  };
 }
-// 关闭面板并把焦点还给触发器；生成中触发器被禁用，此时不抢焦点，避免焦点掉到 body 上。
-function closeByok(returnFocus = false) {
-  if (!byokOpen.value) return;
-  byokOpen.value = false;
-  if (returnFocus) nextTick(() => { if (!byokTrigger.value?.disabled) byokTrigger.value?.focus(); });
+// 把本机设置同步进会话与界面；密钥已选保存时，重新打开页面会直接续上。
+function syncAiSession() {
+  const settings = readSettings();
+  configureBrowserAI({ apiKey: getStoredKey(), baseUrl: settings.aiBaseUrl, model: settings.aiModel });
+  aiReady.value = hasBrowserKey();
+  aiCount.value = sessionUsage();
 }
-// 打开面板时把焦点直接送进密钥输入框，键盘用户一进来就能粘贴密钥。
-watch(byokOpen, open => { if (open) nextTick(() => byokInputEl.value?.focus()); });
-function removeByok() {
+// 静态托管下，本机设置就是页面上的「环境变量」：同步给店铺信息与平台入口。
+function applyStoreToConfig(settings) {
+  if (!config.value) return;
+  const store = { name: settings.storeName, city: settings.storeCity };
+  config.value = {
+    ...config.value,
+    store,
+    urls: {
+      ...config.value.urls,
+      Google: settings.googleReviewUrl || defaultGoogleUrl(store),
+      小红书: settings.xiaohongshuUrl,
+    },
+  };
+}
+function openSettings(focusKey = false, opener = null) {
+  settingsError.value = '';
+  settingsForm.value = blankSettingsForm();
+  settingsHasKey.value = readSettings().hasKey;
+  settingsOpener.value = opener;
+  settingsOpen.value = true;
+  // 密钥被拒绝后自动打开时，焦点直接落在密钥框，让评审者当场换一把。
+  nextTick(() => (focusKey ? settingsKeyEl.value : settingsFirstEl.value)?.focus());
+}
+function closeSettings(returnFocus = false) {
+  if (!settingsOpen.value) return;
+  settingsOpen.value = false;
+  if (returnFocus) nextTick(() => settingsOpener.value?.focus());
+}
+function toggleSettings(opener) {
+  if (settingsOpen.value) closeSettings(true);
+  else openSettings(false, opener);
+}
+function saveLocalSettings() {
+  settingsError.value = '';
+  const form = settingsForm.value;
+  const key = form.aiKey.trim();
+  if (key && !normalizeKey(key)) { settingsError.value = 'settingsKeyFormatError'; return; }
+  let settings;
+  try {
+    settings = saveSettings({
+      storeName: form.storeName, storeCity: form.storeCity,
+      googleReviewUrl: form.googleReviewUrl, xiaohongshuUrl: form.xiaohongshuUrl,
+      aiBaseUrl: form.aiBaseUrl, aiModel: form.aiModel,
+    });
+  } catch (err) {
+    // 地址不合法时抛出稳定文案键，原位提示，不写坏配置。
+    settingsError.value = err.message;
+    return;
+  }
+  // 密钥的去留以面板为准：填了才写入（混淆后），留空则连本机存储里那份一起清掉，
+  // 否则只清内存的话，刷新页面密钥又会从 localStorage 续上。
+  if (key) setStoredKey(key); else clearStoredKey();
+  syncAiSession();
+  applyStoreToConfig(settings);
+  settingsHasKey.value = settings.hasKey;
+  settingsForm.value.aiKey = key;
+  closeSettings(true);
+  notice.value = 'settingsSaved';
+  confirmed.value = false;
+}
+function clearLocalKey() {
+  // 存储里那份也要一起清：只清内存时，刷新后密钥照样续上，按钮就名不副实了。
+  clearStoredKey();
   clearBrowserKey();
-  byokActive.value = false;
-  byokCount.value = 0;
-  byokError.value = '';
-  byokOpen.value = true;
-  nextTick(() => byokInputEl.value?.focus());
+  syncAiSession();
+  settingsForm.value.aiKey = '';
+  settingsHasKey.value = false;
+  settingsError.value = '';
+}
+function resetLocalSettings() {
+  resetSettings();
+  clearBrowserKey();
+  syncAiSession();
+  applyStoreToConfig(readSettings());
+  settingsForm.value = blankSettingsForm();
+  settingsHasKey.value = false;
+  settingsError.value = '';
+  notice.value = 'settingsResetDone';
+  confirmed.value = false;
 }
 onMounted(() => {
   document.addEventListener('pointerdown', onDocumentPointerDown);
@@ -135,6 +221,9 @@ function chooseLanguage(code) {
 // 点击语言区域以外的任何地方都收起菜单，避免菜单遮挡、干扰页面其余操作。
 function onDocumentPointerDown(event) {
   if (languageOpen.value && pickerElement.value && !pickerElement.value.contains(event.target)) closeLanguage();
+  // 设置面板同理：点面板与触发按钮以外的地方就收起；触发按钮交给自己的 click 决定开关。
+  if (settingsOpen.value && settingsPanel.value && !settingsPanel.value.contains(event.target)
+    && !settingsOpener.value?.contains(event.target)) closeSettings();
 }
 // 菜单内键盘导航：方向键移动、Home/End 跳转、Esc 收起并把焦点还给图标按钮。
 function onMenuKeydown(event) {
@@ -166,11 +255,11 @@ async function generateReview() {
     // 仅在成功后替换，失败时保留顾客已经编辑的内容。
     generatedContent.value = data.content;
     generatedFor.value = { signature: requestSignature, platform: request.platform, language: data.language || request.language, ai: !data.demo };
-    byokCount.value = sessionUsage();
+    aiCount.value = sessionUsage();
     notice.value = 'ready';
   } catch (err) {
-    // 自带密钥被明确拒绝时移除密钥并重新弹出面板，让评审者当场换一把密钥重试。
-    if (err?.clearKey) { clearBrowserKey(); byokActive.value = false; byokOpen.value = true; }
+    // 本机密钥被明确拒绝时移除并重新弹出设置面板，让评审者当场换一把密钥重试。
+    if (err?.clearKey) { clearBrowserKey(); aiReady.value = false; openSettings(true); }
     error.value = err.name === 'TimeoutError' ? 'timeout' : err instanceof TypeError ? 'networkError'
       : BROWSER_ERROR_KEYS.has(err.message) || Object.values(ERROR_KEYS).includes(err.message) ? err.message : 'serverError';
   } finally { isLoading.value = false; }
@@ -259,38 +348,17 @@ async function copyAndRedirect() {
             <div class="platforms"><label v-for="platform in platforms" :key="platform.name" :class="['platform', { active: selectedPlatform === platform.name }]"><input v-model="selectedPlatform" type="radio" name="platform" :value="platform.name" @change="confirmed = false; notice = ''" /><span :class="['platform-mark', platform.className]">{{ platform.mark }}</span><strong>{{ platformName(platform.name) }}</strong><small>{{ t(platform.detail) }}</small><span class="radio-dot" aria-hidden="true"></span></label></div>
           </fieldset>
           <button class="primary generate" :disabled="!selectedTags.length || isLoading" @click="generateReview"><span :class="{ spinner: isLoading }" aria-hidden="true">{{ isLoading ? '' : '✧' }}</span>{{ t(isLoading ? 'generating' : generatedContent ? 'regenerate' : 'generate') }}<span v-if="!isLoading" aria-hidden="true">↗</span></button>
-          <p class="generation-note">{{ t(config.demo ? (byokActive ? 'byokActiveNote' : 'demoNote') : 'aiNote') }}</p>
+          <p class="generation-note">{{ t(generationNote) }}</p>
           <p v-if="config.notificationEnabled" class="generation-note">{{ t('notifyNote') }}</p>
-          <div v-if="byokAvailable" class="byok">
-            <button ref="byokTrigger" class="byok-trigger" type="button" :aria-expanded="byokOpen" aria-controls="byok-panel" :disabled="isLoading" @click="byokOpen = !byokOpen">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15.5" r="3.8"/><path d="M10.8 12.7 19 4.5"/><path d="M16.4 7.1l2.6 2.6"/><path d="M13.9 4.5 15.4 6"/></svg>
-              <span>{{ t(byokActive ? 'byokManage' : 'byokTrigger') }}</span>
-            </button>
-            <div v-if="byokOpen" id="byok-panel" class="byok-panel" role="region" :aria-label="t('byokPanelAria')" @keydown.esc.prevent="closeByok(true)">
-              <strong class="byok-heading">{{ t('byokTitle') }}</strong>
-              <p class="byok-intro">{{ t('byokIntro') }}</p>
-              <ul class="byok-points">
-                <li>{{ t('byokMemory') }}</li>
-                <li>{{ t('byokDirect') }}</li>
-                <li>{{ t('byokCost') }}</li>
-                <li>{{ t('byokShared') }}</li>
-                <li>{{ t('byokNotifyLimit') }}</li>
-              </ul>
-              <label class="byok-field" :class="{ invalid: byokError }">
-                <span>{{ t('byokKeyLabel') }}</span>
-                <input ref="byokInputEl" v-model="byokKeyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" :placeholder="t('byokKeyPlaceholder')" @keydown.enter.prevent="enableByok" />
-              </label>
-              <p v-if="byokError" class="byok-error" role="alert">{{ t(byokError) }}</p>
-              <div class="byok-actions">
-                <button class="byok-enable" type="button" :disabled="!byokKeyInput" @click="enableByok">{{ t('byokEnable') }}</button>
-                <button v-if="byokActive" class="byok-remove" type="button" @click="removeByok">{{ t('byokRemove') }}</button>
-                <button v-else class="byok-cancel" type="button" @click="closeByok(true)">{{ t('byokCancel') }}</button>
-              </div>
-            </div>
-            <p v-else-if="byokActive" class="byok-active">
-              <span class="byok-dot" aria-hidden="true"></span>
-              <span class="byok-active-text">{{ t('byokActiveNote') }}<b class="byok-count">{{ t('byokSessionCount') }} {{ byokCount }}</b></span>
+          <div v-if="staticDemo" class="ai-state">
+            <p v-if="aiReady" class="ai-active">
+              <span class="ai-dot" aria-hidden="true"></span>
+              <span class="ai-active-text">{{ t('aiActiveState') }}<b class="ai-count">{{ t('aiSessionCount') }} {{ aiCount }}</b></span>
             </p>
+            <button v-else class="ai-setup" type="button" :disabled="isLoading" @click="openSettings(false, $event.currentTarget)">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></svg>
+              <span>{{ t('settingsOpen') }}</span>
+            </button>
           </div>
           <p v-if="error" class="error-message" role="alert">{{ t(error) }}</p>
         </section>
@@ -328,6 +396,69 @@ async function copyAndRedirect() {
       </div>
       <div class="bottom-note"><span>{{ t('bottom') }}</span><span>{{ t('step1') }} <b>→</b> {{ t('step2') }} <b>→</b> {{ t('step3') }}</span></div>
     </main>
+    <!-- 静态托管没有服务端：右下角设置面板承载这些本该由环境变量提供的配置。 -->
+    <template v-if="staticHost">
+      <button class="settings-fab" type="button"
+        :aria-expanded="settingsOpen" aria-controls="settings-panel"
+        :aria-label="t('settingsFabAria')" @click="toggleSettings($event.currentTarget)">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3"/><path d="M14 4v4M8 12v4M14 20v4"/></svg>
+      </button>
+      <div v-if="settingsOpen" id="settings-panel" ref="settingsPanel" class="settings-panel" role="dialog" aria-labelledby="settings-title" @keydown.esc.prevent="closeSettings(true)">
+        <div class="settings-head">
+          <div>
+            <p class="settings-kicker">GITHUB PAGES · LOCAL</p>
+            <h2 id="settings-title">{{ t('settingsTitle') }}</h2>
+          </div>
+          <button class="settings-close" type="button" :aria-label="t('settingsClose')" @click="closeSettings(true)">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <p class="settings-intro">{{ t('settingsIntro') }}</p>
+        <fieldset class="settings-group" :disabled="isLoading">
+          <legend>{{ t('settingsGroupShop') }}</legend>
+          <label class="settings-field">
+            <span>{{ t('settingsStore') }}</span>
+            <input ref="settingsFirstEl" v-model="settingsForm.storeName" type="text" maxlength="40" autocomplete="off" />
+          </label>
+          <label class="settings-field">
+            <span>{{ t('settingsCity') }}</span>
+            <input v-model="settingsForm.storeCity" type="text" maxlength="40" autocomplete="off" />
+          </label>
+          <label class="settings-field">
+            <span>{{ t('settingsGoogle') }}</span>
+            <input v-model="settingsForm.googleReviewUrl" type="url" inputmode="url" spellcheck="false" placeholder="https://g.page/..." />
+          </label>
+          <label class="settings-field">
+            <span>{{ t('settingsXhs') }}</span>
+            <input v-model="settingsForm.xiaohongshuUrl" type="url" inputmode="url" spellcheck="false" placeholder="https://www.xiaohongshu.com/" />
+          </label>
+        </fieldset>
+        <fieldset class="settings-group" :disabled="isLoading">
+          <legend>{{ t('settingsGroupAi') }}</legend>
+          <label class="settings-field">
+            <span>{{ t('settingsBaseUrl') }}</span>
+            <input v-model="settingsForm.aiBaseUrl" type="url" inputmode="url" spellcheck="false" placeholder="https://api.deepseek.com" />
+          </label>
+          <p class="settings-hint">{{ t('settingsBaseUrlHint') }}</p>
+          <label class="settings-field">
+            <span>{{ t('settingsModel') }}</span>
+            <input v-model="settingsForm.aiModel" type="text" spellcheck="false" placeholder="deepseek-v4-flash" />
+          </label>
+          <label class="settings-field">
+            <span>{{ t('settingsKey') }}</span>
+            <input ref="settingsKeyEl" v-model="settingsForm.aiKey" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" :placeholder="t('settingsKeyPlaceholder')" @keydown.enter.prevent="saveLocalSettings" />
+          </label>
+          <p class="settings-hint">{{ t('settingsKeyHint') }}</p>
+          <p class="settings-hint">{{ t('settingsNotifyLimit') }}</p>
+        </fieldset>
+        <p v-if="settingsError" class="settings-error" role="alert">{{ t(settingsError) }}</p>
+        <div class="settings-actions">
+          <button class="settings-save" type="button" :disabled="isLoading" @click="saveLocalSettings">{{ t('settingsSave') }}</button>
+          <button class="settings-clear" type="button" :disabled="!settingsHasKey" @click="clearLocalKey">{{ t('settingsClearKey') }}</button>
+          <button class="settings-reset" type="button" @click="resetLocalSettings">{{ t('settingsResetBtn') }}</button>
+        </div>
+      </div>
+    </template>
     <footer><span>© {{ new Date().getFullYear() }} {{ config?.store.name || 'Sunny Tea House' }}</span><span>{{ t('fictional') }} · {{ config?.store.city || 'San Jose' }}</span></footer>
   </div>
 </template>

@@ -37,8 +37,9 @@ test('配置加载失败时展示重连按钮，恢复后正常进入', async ({
   await page.route('**/api/config', route => route.abort());
   await page.goto('/');
   await expect(page.getByText('暂时无法加载店铺信息，请确认服务已启动后重试。')).toBeVisible();
-  // 加载失败不能悄悄变成静态演示：此时不应出现自带密钥入口。
-  await expect(page.getByRole('button', { name: '使用我自己的 AI 密钥' })).toHaveCount(0);
+  // 加载失败不能悄悄变成静态演示：此时不应出现本地设置入口。
+  await expect(page.getByRole('button', { name: '打开本地设置' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '配置 AI 密钥' })).toHaveCount(0);
   await page.unroute('**/api/config');
   await page.getByRole('button', { name: '重新连接' }).click();
   await expect(page.getByText('你的这一杯，值得被记录')).toBeVisible();

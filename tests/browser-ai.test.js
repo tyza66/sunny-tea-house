@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeKey, setBrowserKey, clearBrowserKey, hasBrowserKey, sessionUsage,
-  generateWithBrowserKey, BROWSER_ERROR_KEYS } from '../src/browser-ai.js';
+  configureBrowserAI, generateWithBrowserKey, BROWSER_ERROR_KEYS } from '../src/browser-ai.js';
 import { buildMessages } from '../shared/prompt.js';
 import { getShopConfig, requestReview, isStaticHost } from '../src/api.js';
 
@@ -31,13 +31,17 @@ async function useStaticMode(fetchImpl) {
   assert.equal(isStaticHost(), true);
 }
 
-test('normalizeKey 只接受 sk- 开头的完整密钥，并剥离引号与空白', () => {
+test('normalizeKey 通用校验：不绑定服务商格式，只拦明显没粘完整的', () => {
   assert.equal(normalizeKey(' sk-0123456789abcdefghij '), 'sk-0123456789abcdefghij');
   assert.equal(normalizeKey('"sk-0123456789abcdefghij"'), 'sk-0123456789abcdefghij');
+  assert.equal(normalizeKey("'pk-0123456789abcdefghij'"), 'pk-0123456789abcdefghij');
+  assert.equal(normalizeKey('pk-0123456789abcdefghij'), 'pk-0123456789abcdefghij');
   assert.equal(normalizeKey('sk-short'), '');
-  assert.equal(normalizeKey('pk-0123456789abcdefghij'), '');
+  assert.equal(normalizeKey('sk-0123 456789abcdefghij'), '');
+  assert.equal(normalizeKey('sk-0123456789abcdef\nghij'), '');
   assert.equal(normalizeKey(''), '');
   assert.equal(normalizeKey(null), '');
+  assert.equal(normalizeKey(undefined), '');
 });
 
 test('未启用密钥时拒绝生成；启用后可清除并重新启用', () => {
@@ -193,4 +197,29 @@ test('未启用密钥时 requestReview 仍回退本地演示文案', async () =>
     const result = await requestReview({ platform: 'Google', tags: ['服务好'], language: 'auto' });
     assert.equal(result.demo, true);
   });
+});
+
+test('自定义服务商：按面板里的接口地址与模型名请求，且不降级到 DeepSeek 备用模型', async () => {
+  await useStaticMode();
+  assert.equal(setBrowserKey('pk-0123456789abcdefghij'), true);
+  configureBrowserAI({ baseUrl: 'https://models.example.org/v1', model: 'my-model' });
+  const calls = [];
+  await withFetch(async (url, options) => {
+    calls.push({ url, body: JSON.parse(options.body) });
+    return jsonResponse(400, { error: 'model not supported' });
+  }, async () => {
+    // 自定义模型不通时按服务商自身报错，不该偷偷改打 DeepSeek。
+    await assert.rejects(() => generateWithBrowserKey({ platform: 'Google', tags: ['服务好'], language: 'en' }, store), error => {
+      assert.equal(error.message, 'browserModelError');
+      return true;
+    });
+  });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, 'https://models.example.org/v1/chat/completions');
+  assert.equal(calls[0].body.model, 'my-model');
+  assert.equal(calls[0].body.thinking, undefined);
+  assert.equal(calls[0].body.max_tokens, 800);
+  // 复位默认地址与模型，避免影响同文件其余用例。
+  configureBrowserAI({ baseUrl: 'https://api.deepseek.com', model: 'deepseek-v4-flash' });
+  clearBrowserKey();
 });

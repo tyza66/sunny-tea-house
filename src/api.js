@@ -1,24 +1,38 @@
 import { resolveLanguage, ERROR_KEYS } from '../shared/languages.js';
 import { TAGS, demoReview } from '../shared/review-demo.js';
 import { generateWithBrowserKey, hasBrowserKey } from './browser-ai.js';
+import { readSettings, defaultGoogleUrl } from './settings.js';
 
-const DEMO_STORE = { name: 'Sunny Tea House', city: 'San Jose' };
 // 静态主机（GitHub Pages 等）对 GET 缺失路径返回 404，对 POST 缺失路径常返回 405。
 const NO_API_STATUS = new Set([404, 405]);
 // /api/config 读取失败说明当前是纯静态托管，生成直接用本地文案，不再重复探测。
 let staticFallback = false;
-const DEMO_URLS = {
-  Google: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${DEMO_STORE.name} ${DEMO_STORE.city}`)}`,
-  小红书: 'https://www.xiaohongshu.com/',
-};
+
+// 静态托管没有服务端环境变量：店铺信息与平台链接取自评审者在本机浏览器里的设置
+// （默认值即 Sunny Tea House），让界面、提示词与跳转链接三者保持一致。
+function localStore() {
+  const settings = readSettings();
+  return { name: settings.storeName, city: settings.storeCity };
+}
 
 function demoConfig() {
-  return { store: DEMO_STORE, demo: true, tags: TAGS, urls: DEMO_URLS, notificationEnabled: false };
+  const settings = readSettings();
+  const store = { name: settings.storeName, city: settings.storeCity };
+  return {
+    store,
+    demo: true,
+    tags: TAGS,
+    urls: {
+      Google: settings.googleReviewUrl || defaultGoogleUrl(store),
+      小红书: settings.xiaohongshuUrl,
+    },
+    notificationEnabled: false,
+  };
 }
 
 function demoResult(input) {
   return {
-    content: demoReview(input, DEMO_STORE),
+    content: demoReview(input, localStore()),
     platform: input.platform,
     language: resolveLanguage(input.language, input.platform),
     demo: true,
@@ -34,7 +48,7 @@ function isStaticResponse(response) {
 }
 
 // 静态演示托管（如 GitHub Pages）没有 /api：接口 404/405 时回退到本地示例文案，
-// 让演示闭环仍可跑通，并提供自带密钥入口；真实后端可用时始终优先走后端。
+// 让演示闭环仍可跑通，并提供本地设置入口；真实后端可用时始终优先走后端。
 // 网络层失败（服务未启动、超时、断网）无法与静态托管区分，不猜：向上抛，
 // 由页面展示「暂时无法加载店铺信息」与重连按钮，重试遇到静态托管再回退演示。
 export async function getShopConfig() {
@@ -54,12 +68,12 @@ export async function getShopConfig() {
   return config;
 }
 
-// 当前是否为无服务端的静态托管：只有静态托管才提供“自带密钥”入口。
+// 当前是否为无服务端的静态托管：只有静态托管才提供「本地设置」入口。
 export function isStaticHost() { return staticFallback; }
 
 export async function requestReview(input) {
-  // 静态托管且已启用自带密钥时，浏览器直连 DeepSeek 完成真实生成，不再用示例文案。
-  if (staticFallback && hasBrowserKey()) return generateWithBrowserKey(input, DEMO_STORE);
+  // 静态托管且本机已保存密钥时，浏览器直连所配 AI 服务完成真实生成，不再用示例文案。
+  if (staticFallback && hasBrowserKey()) return generateWithBrowserKey(input, localStore());
   if (staticFallback) return demoResult(input);
   let response;
   try {

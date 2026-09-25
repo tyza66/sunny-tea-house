@@ -10,8 +10,13 @@ export function createApp(config, dependencies = {}) {
   app.use((_req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    // connect-src 放行 DeepSeek 一个来源：仅服务于静态托管下评审者自带密钥的浏览器直连；服务端出站地址由 AI_BASE_URL 决定，不受 CSP 约束。
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.deepseek.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+    // connect-src 决定浏览器直连 AI 服务商的范围：真实模式只放行 AI_BASE_URL 一个来源；
+    // 演示模式下评审者自带密钥、服务商不限（面板里可填任意 OpenAI 兼容地址），放行所有 HTTPS。
+    // 服务端出站地址由 AI_BASE_URL 决定，不受 CSP 约束。
+    const connectSrc = config.demo
+      ? "connect-src 'self' https:"
+      : `connect-src 'self' ${new URL(config.endpoint).origin}`;
+    res.setHeader('Content-Security-Policy', `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; ${connectSrc}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`);
     next();
   });
   app.use(express.json({ limit: '8kb' }));
