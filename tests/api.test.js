@@ -81,16 +81,42 @@ test('小红书超限只重试一次，再超限明确失败', async () => {
   }), /字数限制/);
   assert.equal(calls, 2);
 });
-test('企业微信默认不发送，启用时生成摘要并发送标记为初稿的消息', async () => {
-  const input = { platform: 'Google', tags: ['服务好'] };
-  await notifyWechat(input, 'review', config, () => { throw new Error('不应调用'); });
+test('企业微信默认不发送，启用时生成摘要并发送含顾客原话的初稿消息', async () => {
+  const bare = { platform: 'Google', tags: ['服务好'] };
+  const noted = { ...bare, comment: ' 茶香很足，想加料 ' };
+  await notifyWechat(bare, 'review', config, () => { throw new Error('不应调用'); });
   const calls = [];
-  await notifyWechat(input, 'review', { ...config, demo: false, notify: true, webhook: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test' }, async (url, options) => {
+  const live = { ...config, demo: false, notify: true, webhook: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test' };
+  const send = async (url, options) => {
     calls.push({ url, body: JSON.parse(options.body) });
-    return calls.length === 1 ? Response.json({ choices: [{ message: { content: '摘要：服务友好。回复草稿：感谢分享。' } }] }) : Response.json({ errcode: 0 });
-  });
-  assert.equal(calls.length, 2); assert.match(calls[1].body.text.content, /尚未发布/);
-  assert.ok(Buffer.byteLength(calls[1].body.text.content) <= 2048);
+    // 按地址区分桩返回：调 AI 取摘要时给 choices，调企微时给 errcode，两者结构不能混。
+    if (url.includes('qyapi.weixin.qq.com')) return Response.json({ errcode: 0 });
+    return Response.json({ choices: [{ message: { content: '摘要：服务友好。回复草稿：感谢分享。' } }] });
+  };
+  // 未填补充原话时不能留下空行或空引号：消息与加原话之前逐字一致。
+  await notifyWechat(bare, 'review', live, send);
+  await notifyWechat(noted, 'review', live, send);
+  assert.equal(calls.length, 4);
+  assert.match(calls[1].body.text.content, /尚未发布/);
+  assert.doesNotMatch(calls[1].body.text.content, /顾客原话/);
+  // 原话同样经过 trim：URL 侧与通知侧看到的必须是同一句。
+  assert.match(calls[3].body.text.content, /顾客原话：「茶香很足，想加料」/);
+  assert.ok(Buffer.byteLength(calls[3].body.text.content) <= 2048);
+});
+test('企微消息超限时优先保留顾客原话，被截断的是尾部摘要', async () => {
+  const calls = [];
+  const live = { ...config, demo: false, notify: true, webhook: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test' };
+  const send = async (url, options) => {
+    calls.push(JSON.parse(options.body));
+    if (url.includes('qyapi.weixin.qq.com')) return Response.json({ errcode: 0 });
+    return Response.json({ choices: [{ message: { content: '摘要：服务友好。回复草稿：感谢分享。' } }] });
+  };
+  await notifyWechat({ platform: 'Google', tags: ['服务好', '茶香浓郁'], comment: '茶香很足，想加料，谢谢' }, '评'.repeat(3000), live, send);
+  const text = calls[1].text.content;
+  assert.ok(Buffer.byteLength(text, 'utf8') <= 2048);
+  assert.match(text, /顾客原话：「茶香很足，想加料，谢谢」/);
+  // 尾部摘要被截掉，顾客亲手写的那句仍在。
+  assert.doesNotMatch(text, /回复草稿/);
 });
 test('HTTP 集成：公开配置无密钥、生成成功、非法输入与请求频率限制', async t => {
   const server = createApp({ ...config, apiKey: 'private-key', webhook: 'private-hook' }).listen(0, '127.0.0.1');
