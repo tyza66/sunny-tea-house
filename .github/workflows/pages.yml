@@ -26,6 +26,11 @@ jobs:
       - run: npm ci
       - name: Run unit tests
         run: npm test
+      # 端到端门禁：单测只覆盖纯逻辑模块，无法发现组件 setup 一执行就崩、页面白屏一类问题。
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Run end-to-end tests
+        run: npm run test:e2e
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -48,13 +48,15 @@ for (const item of cases) {
     const request = page.waitForRequest(req => req.url().endsWith('/api/reviews'));
     await page.locator('.generate').click();
     expect((await request).postDataJSON().language).toBe(item.code);
-    await expect(page.getByRole('textbox')).toHaveValue(new RegExp(item.fragment));
-    await expect(page.getByRole('textbox')).toHaveAttribute('lang', item.code);
-    const text = await page.getByRole('textbox').inputValue();
+    // 评价编辑区的标签随界面语言改变，这里按 id 定位，避免五语文案各写一份。
+    const editor = page.locator('#review');
+    await expect(editor).toHaveValue(new RegExp(item.fragment));
+    await expect(editor).toHaveAttribute('lang', item.code);
+    const text = await editor.inputValue();
     await page.getByRole('checkbox').check();
     // 仅切换界面不会清空、翻译或作废原草稿。
     await switchUiLanguage(page, item.code === 'en' ? 'zh-CN' : 'en');
-    await expect(page.getByRole('textbox')).toHaveValue(text);
+    await expect(editor).toHaveValue(text);
     await expect(page.locator('.copy')).toBeEnabled();
     await switchUiLanguage(page, item.code);
     // 切换评价语言 → 初稿标记过期、暂停复制，需重新生成。
@@ -66,7 +68,7 @@ for (const item of cases) {
     failNext = true;
     await page.locator('.generate').click();
     await expect(page.getByRole('alert')).toContainText(item.unavailable);
-    await expect(page.getByRole('textbox')).toHaveValue(text);
+    await expect(editor).toHaveValue(text);
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('lang', item.code);
     await page.locator('.globe-button').click();
