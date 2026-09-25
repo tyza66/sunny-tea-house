@@ -42,6 +42,8 @@ const selectedTags = ref([]);
 // 可选简单点评：25 字以内，可留空；会进入生成提示词，并纳入“改动即失效”签名。
 const comment = ref('');
 const commentLength = computed(() => [...comment.value].length);
+// 超出 25 字时给出警示：maxlength 拦不住粘贴与输入法提交，只靠计数器看不出已超限。
+const commentOver = computed(() => commentLength.value > COMMENT_MAX);
 // 点评改动同样让已生成的初稿作废，需重新生成后再复制。
 // 必须写在 comment 声明之后：watch 的第一个参数会同步访问该 ref，写在前面会触发暂时性死区。
 watch(comment, () => { confirmed.value = false; notice.value = ''; });
@@ -349,9 +351,9 @@ async function copyAndRedirect() {
             <div class="tags"><button v-for="tag in config.tags" :key="tag" type="button" :aria-pressed="selectedTags.includes(tag)" :disabled="!selectedTags.includes(tag) && selectedTags.length >= 2" :class="['tag', { selected: selectedTags.includes(tag) }]" @click="toggleTag(tag)"><span aria-hidden="true">{{ selectedTags.includes(tag) ? '✓' : '+' }}</span>{{ t(tag) }}</button></div>
           <div class="comment-field">
             <label class="comment-label" for="comment">{{ t('commentLabel') }}</label>
-            <div class="comment-row">
-              <input id="comment" v-model="comment" type="text" :maxlength="COMMENT_MAX" :placeholder="t('commentPlaceholder')" autocomplete="off" />
-              <span class="comment-count" aria-hidden="true">{{ commentLength }}/{{ COMMENT_MAX }}</span>
+            <div class="comment-row" :class="{ 'comment-over': commentOver }">
+              <input id="comment" v-model="comment" type="text" :maxlength="COMMENT_MAX" :placeholder="t('commentPlaceholder')" :aria-invalid="commentOver" autocomplete="off" />
+              <span class="comment-count" :class="{ over: commentOver }" aria-hidden="true">{{ commentLength }}/{{ COMMENT_MAX }}</span>
             </div>
           </div>
           </fieldset>

@@ -135,6 +135,9 @@ test('简单点评超过 25 字时服务端拒绝并提示，已写内容保留'
   });
   await expect(note).toHaveValue('茶'.repeat(26));
   await expect(page.locator('.comment-count')).toHaveText('26/25');
+  // 超出上限必须有可见警示：计数器变朱砂色、输入框置为无效状态，否则顾客看不出已超限。
+  await expect(page.locator('.comment-count')).toHaveClass(/over/);
+  await expect(note).toHaveAttribute('aria-invalid', 'true');
   // 确认 26 个字符确实发给了服务端：拒绝来自接口校验，不是浏览器先把内容截断了。
   const request = page.waitForRequest(req => req.url().endsWith('/api/reviews'));
   await page.getByRole('button', { name: '生成我的评价' }).click();
@@ -142,4 +145,8 @@ test('简单点评超过 25 字时服务端拒绝并提示，已写内容保留'
   await expect(page.getByRole('alert')).toContainText('简单点评请控制在 25 字以内');
   await expect(note).toHaveValue('茶'.repeat(26));
   await expect(page.getByRole('button', { name: '生成我的评价' })).toBeEnabled();
+  // 删回到上限以内，警示随之消失，避免警示长期驻留造成误导。
+  await note.fill('茶'.repeat(25));
+  await expect(page.locator('.comment-count')).not.toHaveClass(/over/);
+  await expect(note).not.toHaveAttribute('aria-invalid', 'true');
 });
