@@ -2,6 +2,7 @@
   "name": "sunny-tea-house",
   "version": "1.0.0",
   "private": true,
+  "author": "https://github.com/tyza66",
   "type": "module",
   "engines": {
     "node": ">=22"

@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 import { ref, watch } from 'vue';
 import { LANGUAGES, isLanguage } from '../shared/languages.js';
 import { messages } from './messages.js';

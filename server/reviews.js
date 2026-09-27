@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 import { isLanguage, resolveLanguage, COMMENT_MAX } from '../shared/languages.js';
 
 import { TAGS, demoReview } from '../shared/review-demo.js';

@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getShopConfig, requestReview, isStaticHost } from '../src/api.js';

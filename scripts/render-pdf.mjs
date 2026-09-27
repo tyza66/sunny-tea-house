@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 // 把 docs/交付文档.md 渲染成 A4 的 PDF（写回 docs/交付文档.pdf）。
 // 中间产物 HTML 落在 tmp/（已在 .gitignore 中），不随仓库分发；
 // 渲染用的浏览器来自开发依赖 @playwright/test，克隆仓库后 npm ci 即可直接执行。

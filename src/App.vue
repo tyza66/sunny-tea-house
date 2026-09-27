@@ -1,4 +1,5 @@
 <script setup>
+// 维护者：https://github.com/tyza66
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { LANGUAGES, isLanguage, resolveLanguage, ERROR_KEYS, COMMENT_MAX } from '../shared/languages.js';
 import { useI18n, readPreference, savePreference } from './i18n.js';

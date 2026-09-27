@@ -1,3 +1,4 @@
+# 维护者：https://github.com/tyza66
 # Netlify 构建前端并自动打包服务端函数；不能仅拖拽上传 out 目录。
 [build]
   command = "npm run build:netlify"

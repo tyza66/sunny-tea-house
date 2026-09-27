@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 import test, { beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { SETTINGS_KEY, DEFAULT_SETTINGS, readSettings, saveSettings, resetSettings,

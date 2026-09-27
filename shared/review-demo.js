@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 import { resolveLanguage } from './languages.js';
 
 // 公共演示模板不包含密钥、网络请求或服务端依赖。

@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 // 页面语言和评价语言使用同一份白名单；平台标识、感受标签在接口中保持不变。
 export const COMMENT_MAX = 25;
 

@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 import 'dotenv/config';
 
 // 通用 AI 服务商配置：任何 OpenAI 兼容（/chat/completions + Bearer 认证）的

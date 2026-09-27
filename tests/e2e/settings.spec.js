@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 import { test, expect } from '@playwright/test';
 
 // 静态托管（GitHub Pages 等）里的「环境变量」：设置面板写进本机 localStorage 的配置，

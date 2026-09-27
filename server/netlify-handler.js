@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 import { readConfig } from './config.js';
 import { TAGS, validateInput, generateReview, notifyWechat, ServiceError } from './reviews.js';
 

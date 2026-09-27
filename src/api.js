@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 import { resolveLanguage, ERROR_KEYS } from '../shared/languages.js';
 import { TAGS, demoReview } from '../shared/review-demo.js';
 import { generateWithBrowserKey, hasBrowserKey } from './browser-ai.js';

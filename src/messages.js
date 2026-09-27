@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 // 每行按简体、繁体、英语、加拿大法语、西班牙语排列，避免界面散落硬编码文案。
 export const messages = {
   language: ['界面语言','介面語言','Display language','Langue d’affichage','Idioma de la interfaz'],

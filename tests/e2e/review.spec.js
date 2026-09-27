@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 import { test, expect } from '@playwright/test';
 import { settleAnimations } from './settle.js';
 // 主流程固定中文环境；其他语言由 language.spec.js 单独覆盖。

@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 // 提示词同时被服务端与浏览器端复用：静态托管下评审者自带密钥直连 DeepSeek 时，
 // 使用同一份写作约束，保证两种托管方式的生成口径一致。
 import { LANGUAGES, resolveLanguage } from './languages.js';

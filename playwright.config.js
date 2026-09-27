@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e', fullyParallel: false,

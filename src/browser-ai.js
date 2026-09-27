@@ -1,3 +1,4 @@
+// 维护者：https://github.com/tyza66
 // 静态托管（GitHub Pages 等）没有服务端时，评审者可粘贴自己的 AI 密钥，由浏览器
 // 直连 OpenAI 兼容接口完成真实生成。密钥默认只保存在当前页面内存中：不写入
 // localStorage / cookie / URL，刷新即失效；请求不经过本站任何服务器。
