@@ -1,5 +1,5 @@
 // 维护者：https://github.com/tyza66
-// 提示词同时被服务端与浏览器端复用：静态托管下评审者自带密钥直连 DeepSeek 时，
+// 提示词同时被服务端与浏览器端复用：静态托管下评审者自带密钥直连 OpenAI 兼容服务商时，
 // 使用同一份写作约束，保证两种托管方式的生成口径一致。
 import { LANGUAGES, resolveLanguage } from './languages.js';
 
@@ -7,15 +7,15 @@ import { LANGUAGES, resolveLanguage } from './languages.js';
 const PLATFORM_VOICE = {
   Google: {
     persona: '角色：你是一位住在北美的真实顾客，正给常去的茶饮店写一条客观、自然的 Google 评价。',
-    structure: '结构：用 3–4 个完整的句子写成一段，第一人称。语气自然克制、直白可信；可基于所选感受给出简短判断（是否值得/性价比），但不要夸张。',
-    rules: '禁用：标题、Markdown、项目符号、Emoji、感叹号、广告词，以及“强烈推荐”“一定来试试”等套话。不要写成攻略或“打卡”口吻。',
-    example: 'Stopped by on a weekday afternoon for an iced tea. The staff were patient when I asked to adjust the sweetness, and the order came out quickly. The tea had a clean, rich aroma that was not overpowering. The space was clean and comfortable enough to sit for a bit.',
+    structure: '结构：第一句先给整体判断（值不值得、会不会再来），再用 1–2 句说清理由，两三句即可，第一人称。语气自然克制、直白可信，不夸张。',
+    rules: '禁用：标题、Markdown、项目符号、Emoji、感叹号、广告词，以及“强烈推荐”“一定来试试”等套话。不要写成探店日记或流水账（如“某天路过……坐了一会”），也不要写成攻略或“打卡”口吻——真实的 Google 评价短而直接。',
+    example: 'Good spot for a quick tea run. The staff were patient when I asked to adjust the sweetness, and my drink came out fast. The tea had a clean, rich aroma that was not overpowering.',
   },
   小红书: {
     persona: '角色：你是一位在小红书分享好物的普通用户，正在写一条真实、轻松的种草笔记。',
     structure: '结构：可加一行短标题；正文 1–2 行后分段，留白、有呼吸感，避免一整段没有换行。',
-    rules: '长度：全文不超过 150 个 Unicode 字符（含标点、空格与 Emoji）。Emoji：按所选感受适当点缀，例如出餐快⚡️、茶香浓郁🍵✨、环境干净🌿、饮品颜值高🧋💛、果肉超丰富🥭。避免：夸张、无依据的“亲测多次”“无限回购”“必买”；不要写成硬广。',
-    example: '🧋 Sunny Tea House 打卡\n\n路过进来歇了会脚，服务很温柔，出餐也麻利。茶香足、回甘自然，颜值在线还很干净，坐着舒服。\n\n适合嘴馋时来一杯 ✨',
+    rules: '长度：全文不超过 150 个 Unicode 字符（含标点、空格、Emoji 与话题标签）。Emoji：按所选感受适当点缀，例如出餐快⚡️、茶香浓郁🍵✨、环境干净🌿、饮品颜值高🧋💛、果肉超丰富🥭。话题标签：结尾另起一行放 2–4 个，用平台常见写法，例如 #探店 #奶茶 #下午茶——这是小红书笔记的常规结构，缺了会不像真实笔记。避免：夸张、无依据的“亲测多次”“无限回购”“必买”；不要写成硬广。',
+    example: '🧋 Sunny Tea House 探店\n\n路过进来歇了会脚，服务很温柔，出餐也麻利。茶香足、回甘自然，颜值在线还很干净，坐着舒服。\n\n适合嘴馋时来一杯 ✨\n\n#探店 #奶茶 #下午茶',
   },
 };
 

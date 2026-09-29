@@ -12,6 +12,22 @@ const VARIANTS = [...Array(DEMO_VARIANTS).keys()];
 const bodyLength = text => [...text].filter(char => /[\p{Letter}\p{Number}]/u.test(char)).length;
 const sample = (language, variant) => demoReview({ platform: 'Google', tags: TAGS.slice(0, 2), language }, STORE, variant);
 
+const GOOGLE_JUDGEMENT = {
+  'zh-CN': /^(值得|会想再来|整体表现不错)/,
+  'zh-TW': /^(值得|會想再來|整體表現不錯)/,
+  en: /^(Good|Easy to recommend|Solid)/,
+  'fr-CA': /^(Bonne adresse|À recommander|Une halte thé solide)/,
+  es: /^(Buen sitio|Recomendable|Una parada de té sólida)/,
+};
+
+const GOOGLE_NARRATION = {
+  'zh-CN': /坐了一会|歇了一会脚|今天在/,
+  'zh-TW': /坐了一會|歇了一會腳|今天在/,
+  en: /^(Stopped in|Swing by|Tried )/,
+  'fr-CA': /^(Passage chez|Arrêt chez|Essayé)/,
+  es: /^(Pasé por|Me pasé por|Probé)/,
+};
+
 test('每种语言、平台与轮换说法都输出完整可读的演示文案', () => {
   for (const { code } of LANGUAGES) {
     for (const platform of PLATFORMS) {
@@ -27,6 +43,30 @@ test('每种语言、平台与轮换说法都输出完整可读的演示文案',
       }
       // 标题句可以只说店名，但每个组合至少有一种说法带出城市。
       assert.ok(texts.some(text => text.includes(STORE.city)), `${code}/${platform} 没有任何说法提到城市`);
+    }
+  }
+});
+
+test('Google 演示文案先给判断，不写成到店流水账', () => {
+  for (const { code } of LANGUAGES) {
+    for (const variant of VARIANTS) {
+      const review = sample(code, variant);
+      const context = `${code}/Google/#${variant}`;
+      assert.match(review, GOOGLE_JUDGEMENT[code], `${context} 未先给整体判断: ${review}`);
+      assert.doesNotMatch(review, GOOGLE_NARRATION[code], `${context} 仍是到店流水账: ${review}`);
+    }
+  }
+});
+
+test('小红书演示文案以 2–4 个话题标签结尾', () => {
+  for (const { code } of LANGUAGES) {
+    for (const variant of VARIANTS) {
+      const review = demoReview({ platform: '小红书', tags: TAGS.slice(0, 2), language: code }, STORE, variant);
+      const tagLine = review.split('\n').filter(Boolean).at(-1);
+      const tags = tagLine.split(/\s+/).filter(tag => tag.startsWith('#'));
+      const context = `${code}/小红书/#${variant}`;
+      assert.match(tagLine, /^#\S+(?: #\S+)+$/, `${context} 缺少独立话题标签行: ${review}`);
+      assert.ok(tags.length >= 2 && tags.length <= 4, `${context} 话题标签数量应为 2–4 个: ${review}`);
     }
   }
 });

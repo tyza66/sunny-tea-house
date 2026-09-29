@@ -74,55 +74,55 @@ const SHELL = {
   Google: {
     'zh-CN': {
       gap: '', sep: '，',
-      head: ['在${city}的${name}坐了一会。', '周末路过${city}，在${name}歇了一会脚。', '今天在${city}的${name}喝了一杯。'],
-      tail: ['。整体是一次舒服的消费。', '。会想再来一次。'],
+      head: ['值得顺路来一杯，${city}的${name}，', '会想再来的茶饮店，${city}的${name}，', '整体表现不错，${city}的${name}，'],
+      tail: ['。会想再来一次。', '。适合想喝奶茶时来一杯。'],
     },
     'zh-TW': {
       gap: '', sep: '，',
-      head: ['在${city}的${name}坐了一會。', '週末路過${city}，在${name}歇了一會腳。', '今天在${city}的${name}喝了一杯。'],
-      tail: ['。整體是一次舒服的消費。', '。會想再來一次。'],
+      head: ['值得順路來一杯，${city}的${name}，', '會想再來的茶飲店，${city}的${name}，', '整體表現不錯，${city}的${name}，'],
+      tail: ['。會想再來一次。', '。想喝奶茶時很適合來一杯。'],
     },
     en: {
       gap: ' ', sep: ', and ',
-      head: ['Stopped in at ${name} in ${city}.', 'Swing by ${name} in ${city} after work.', 'Tried ${name} in ${city} this weekend.'],
-      tail: ['. A solid, low-key spot for a relaxed tea run.', '. Easy to recommend for a quick tea break.'],
+      head: ['Good spot for a quick tea run in ${city}. At ${name}: ', 'Easy to recommend: ${name} in ${city}. What stood out: ', 'Solid tea stop in ${city}. At ${name}: '],
+      tail: ['. Would come back for another drink.', '. Worth keeping in the rotation.'],
     },
     'fr-CA': {
       gap: ' ', sep: ', et ',
-      head: ['Passage chez ${name} à ${city}.', 'Arrêt chez ${name} à ${city} en fin de journée.', 'Essayé ${name} à ${city} cette fin de semaine.'],
-      tail: ['. Une bonne adresse pour un thé tranquille.', '. À recommander pour une pause thé.'],
+      head: ['Bonne adresse pour une pause thé à ${city}. Chez ${name} : ', 'À recommander : ${name} à ${city}. Points forts : ', 'Une halte thé solide à ${city}. Chez ${name} : '],
+      tail: ['. J’y reviendrais volontiers.', '. Une adresse à garder.'],
     },
     es: {
       gap: ' ', sep: ', y ',
-      head: ['Pasé por ${name} en ${city}.', 'Me pasé por ${name} en ${city} después del trabajo.', 'Probé ${name} en ${city} este fin de semana.'],
-      tail: ['. Un buen sitio para un té tranquilo.', '. Recomendable para una pausa tranquila.'],
+      head: ['Buen sitio para una pausa de té en ${city}. En ${name}: ', 'Recomendable: ${name} en ${city}. Lo mejor: ', 'Una parada de té sólida en ${city}. En ${name}: '],
+      tail: ['. Volvería sin dudarlo.', '. Una opción para repetir.'],
     },
   },
   小红书: {
     'zh-CN': {
       gap: '', sep: '，',
       head: ['🧋 ${name} 探店\n\n', '🧋 ${name}｜这一杯有点东西\n\n', '🧋 ${city}探店｜${name}\n\n'],
-      tail: ['。✨\n\n嘴馋的时候来一杯，很舒服。', '。✨\n\n下次来${city}还会想来一杯。'],
+      tail: ['。✨\n\n嘴馋的时候来一杯，很舒服。\n\n#探店 #奶茶 #下午茶', '。✨\n\n下次来${city}还会想再来一杯。\n\n#探店 #奶茶 #下午茶'],
     },
     'zh-TW': {
       gap: '', sep: '，',
       head: ['🧋 ${name} 探店\n\n', '🧋 ${name}｜這一杯有點東西\n\n', '🧋 ${city}探店｜${name}\n\n'],
-      tail: ['。✨\n\n嘴饞的時候來一杯，很舒服。', '。✨\n\n下次來${city}還會想來一杯。'],
+      tail: ['。✨\n\n嘴饞的時候來一杯，很舒服。\n\n#探店 #奶茶 #下午茶', '。✨\n\n下次來${city}還會想來一杯。\n\n#探店 #奶茶 #下午茶'],
     },
     en: {
       gap: '', sep: ', and ',
       head: ['🧋 ${name} · ${city}\n\n', '🧋 ${name} in ${city}\n\n', '🧋 ${city} tea run — ${name}\n\n'],
-      tail: ['. 💛\n\nWorth a stop nearby ✨', '. 💛\n\nWould come back next time ✨'],
+      tail: ['. 💛\n\nNice for a nearby break ✨\n\n#boba #bobatea #teatime', '. 💛\n\nWould come back ✨\n\n#boba #bobatea #teatime'],
     },
     'fr-CA': {
       gap: '', sep: ' et ',
       head: ['🧋 ${name} · ${city}\n\n', '🧋 ${name} à ${city}\n\n', '🧋 ${city} — ${name}\n\n'],
-      tail: ['. 💛\n\nÀ essayer si vous passez par là ✨', '. 💛\n\nJ’y reviendrai ✨'],
+      tail: ['. 💛\n\nIdéal pour une pause ✨\n\n#boba #thé #pausethé', '. 💛\n\nJ’y reviendrai ✨\n\n#boba #thé #pausethé'],
     },
     es: {
       gap: '', sep: ', y ',
       head: ['🧋 ${name} · ${city}\n\n', '🧋 ${name} en ${city}\n\n', '🧋 ${city} — ${name}\n\n'],
-      tail: ['. 💛\n\nVale la pena ✨', '. 💛\n\nVolvería la próxima vez ✨'],
+      tail: ['. 💛\n\nIdeal para una pausa ✨\n\n#boba #té #merienda', '. 💛\n\nVolvería ✨\n\n#boba #té #merienda'],
     },
   },
 };

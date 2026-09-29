@@ -38,6 +38,19 @@ test('所有语言与平台的提示词使用所选语言，演示覆盖全部�
   }
 });
 
+test('两个平台的提示词遵循真实发布习惯', () => {
+  const config = readConfig({});
+  const google = buildMessages({ platform: 'Google', tags: ['服务好'], language: 'en' }, config.store)[0].content;
+  assert.match(google, /第一句先给整体判断/);
+  assert.match(google, /不要写成探店日记或流水账/);
+  assert.match(google, /真实的 Google 评价短而直接/);
+
+  const rednote = buildMessages({ platform: '小红书', tags: ['茶香浓郁'], language: 'zh-CN' }, config.store)[0].content;
+  assert.match(rednote, /含标点、空格、Emoji 与话题标签/);
+  assert.match(rednote, /结尾另起一行放 2–4 个/);
+  assert.match(rednote, /#探店 #奶茶 #下午茶/);
+});
+
 test('HTTP 传递独立评价语言，返回实际语言，不依赖平台默认值', async t => {
   const server = createApp(readConfig({})).listen(0, '127.0.0.1');
   await once(server, 'listening');
